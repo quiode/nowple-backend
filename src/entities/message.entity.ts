@@ -5,9 +5,9 @@ export class Message {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne((type) => User, (user) => user.sentMessages) sender: User;
+  @ManyToOne((type) => User, (user) => user.sentMessages, { nullable: false, eager: true }) sender: User;
 
-  @ManyToOne((type) => User, (user) => user.receivedMessages) receiver: User;
+  @ManyToOne((type) => User, (user) => user.receivedMessages, { nullable: false, eager: true }) receiver: User;
 
   @Column({ nullable: true })
   message: string;

@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Settings } from './settings.entity';
 import { Message } from './message.entity';
 import { Interests } from './interests.entity';
@@ -16,11 +16,15 @@ export class User {
   @JoinColumn()
   interests: Interests;
 
-  @OneToMany((type) => Message, (message) => message.sender, { nullable: true })
+  @OneToMany((type) => Message, (message) => message.sender, { nullable: true, cascade: true })
   sentMessages: Message[];
 
-  @OneToMany((type) => Message, (message) => message.receiver, { nullable: true })
+  @OneToMany((type) => Message, (message) => message.receiver, { nullable: true, cascade: true })
   receivedMessages: Message[];
+
+  @ManyToMany(() => User, { nullable: true })
+  @JoinTable()
+  matches: User[];
 
   @Column({unique: true})
   username: string;
