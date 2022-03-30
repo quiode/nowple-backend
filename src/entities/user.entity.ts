@@ -10,7 +10,7 @@ export class User {
 
   @OneToOne(() => Settings, { cascade: true })
   @JoinColumn()
-  setting: Settings;
+  settings: Settings;
 
   @OneToOne(() => Interests, { cascade: true })
   @JoinColumn()
