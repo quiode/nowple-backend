@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
 export class UserService {
-  constructor(private userRepository: Repository<User>) {}
+  constructor(@InjectRepository(User) private userRepository: Repository<User>) {}
 
   /**
    * Finds a user by its username, shorthand for {@link findOneByUsername}

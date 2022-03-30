@@ -1,5 +1,4 @@
 import { Controller, InternalServerErrorException, Post, Request, UseGuards, Get } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { LocalAuthGuard } from './local-auth.guard';
 import { AuthService } from './auth.service';
 import { User } from '../entities/user.entity';

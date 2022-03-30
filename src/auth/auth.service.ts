@@ -17,6 +17,7 @@ export class AuthService {
         const user = await this.userService.findOneByUsername(username);
         if (!user) null;
         const hashedPassword = bcrypt.hashSync(password, this.saltRounds);
+        // console.log(hashedPassword);
         if (user.password != hashedPassword) null;
         return user;
     }
