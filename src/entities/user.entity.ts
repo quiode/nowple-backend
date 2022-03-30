@@ -22,7 +22,7 @@ export class User {
   @OneToMany((type) => Message, (message) => message.receiver, { nullable: true })
   receivedMessages: Message[];
 
-  @Column()
+  @Column({unique: true})
   username: string;
 
   @Column()
