@@ -1,24 +1,22 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { UserService } from '../user/user.service';
-import * as bcrypt from 'bcrypt';
 import { User } from '../entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
+import { SharedService } from '../shared/shared.service';
 
 @Injectable()
 export class AuthService {
-    constructor(private userService: UserService, private jwtService: JwtService) {
+    constructor(private userService: UserService, private jwtService: JwtService, private sharedService: SharedService) {
     }
-    readonly saltRounds = 10;
 
     /**
      * validates the user credentials, returns the User only if the password matches with the stored hash
      */
     async validateUser(username: string, password: string): Promise<User | null> {
         const user = await this.userService.findOneByUsername(username);
-        if (!user) null;
-        const hashedPassword = bcrypt.hashSync(password, this.saltRounds);
-        // console.log(hashedPassword);
-        if (user.password != hashedPassword) null;
+        if (user == undefined) return null;
+        const hashedPassword = this.sharedService.hashPasswordSync(password);
+        if (user.password != hashedPassword) return null;
         return user;
     }
 

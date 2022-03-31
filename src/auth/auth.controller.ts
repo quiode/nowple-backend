@@ -1,12 +1,32 @@
-import { Controller, InternalServerErrorException, Post, Request, UseGuards, Get } from '@nestjs/common';
+import { Controller, InternalServerErrorException, Post, Request, UseGuards, Body } from '@nestjs/common';
 import { LocalAuthGuard } from './local-auth.guard';
 import { AuthService } from './auth.service';
 import { User } from '../entities/user.entity';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { UserService } from '../user/user.service';
+import { IsNotEmpty } from 'class-validator';
+
+
+export class RegisterBody {
+  @IsNotEmpty()
+  username: string;
+  @IsNotEmpty()
+  password: string;
+
+  settings?:{
+    isDarkMode?: boolean;
+  }
+  interests?:{
+    authoritarian?: number;
+    economicRight?: number;
+    economicLeft?: number;
+    libertarian?: number;
+  }
+}
 
 @Controller('auth')
 export class AuthController {
-   constructor(private readonly authService: AuthService) {}
+   constructor(private authService: AuthService, private userService: UserService) {}
 
   /**
    * requires password and username in body, returns a JWT
@@ -27,5 +47,14 @@ export class AuthController {
   @Post('refresh')
   async refresh(@Request() req): Promise<string> {
     return this.authService.login(req.user as User);
+  }
+
+  /**
+   * registers a new user and returns a JWT
+   */
+  @Post('register')
+  async register(@Body() body: RegisterBody): Promise<string> {
+    const user = await this.userService.create(body);
+    return this.authService.login(user);
   }
 }

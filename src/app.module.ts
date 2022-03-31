@@ -17,7 +17,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     PreferencesModule,
     MessagesModule,
     SharedModule,
-    TypeOrmModule.forRoot()
+    TypeOrmModule.forRoot(),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

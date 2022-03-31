@@ -4,15 +4,15 @@ export class Interests {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({nullable: true})
   authoritarian: number;
 
-  @Column()
+  @Column({nullable: true})
   economicRight: number;
 
-  @Column()
+  @Column({nullable: true})
   economicLeft: number;
 
-  @Column()
+  @Column({nullable: true})
   libertarian: number;
 }
