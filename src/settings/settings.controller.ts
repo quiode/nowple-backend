@@ -1,20 +1,17 @@
-import { Controller, Get, UseGuards, Request, InternalServerErrorException, Patch, Body } from '@nestjs/common';
+import { Controller, Get, UseGuards, InternalServerErrorException, Patch, Body, Req, BadRequestException } from '@nestjs/common';
 import { Settings } from 'src/entities/settings.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SettingsService } from './settings.service';
 import { User } from '../entities/user.entity';
-
-export class updateSettingsDto {
-  isDarkMode?: boolean;
-}
-
+import { Request } from 'express';
+import { SettingsBody } from '../auth/auth.controller';
 @Controller('settings')
 export class SettingsController {
   constructor(private settingsService: SettingsService) { }
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  async getSettings(@Request() req): Promise<Settings> {
+  async getSettings(@Req() req: Request): Promise<Settings> {
     if (!(req.user as User)) {
       throw new InternalServerErrorException('User not found');
     }
@@ -24,11 +21,13 @@ export class SettingsController {
 
   @UseGuards(JwtAuthGuard)
   @Patch()
-  async updateSettings(@Request() req, @Body() updateSettingsBody: updateSettingsDto): Promise<Settings> {
+  async updateSettings(@Body() body: SettingsBody, @Req() req: Request): Promise<Settings> {
     if (!(req.user as User)) {
       throw new InternalServerErrorException('User not found');
     }
 
-    return this.settingsService.updateSettings((req.user as User).id, updateSettingsBody);
+    if (req.body == null) throw new BadRequestException('Body is empty');
+
+    return this.settingsService.updateSettings((req.user as User).id, req.body as SettingsBody);
   }
 }

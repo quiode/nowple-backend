@@ -4,24 +4,51 @@ import { AuthService } from './auth.service';
 import { User } from '../entities/user.entity';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { UserService } from '../user/user.service';
-import { IsNotEmpty } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsObject, IsOptional, IsPositive, IsString } from 'class-validator';
 
+export class InterestsBody {
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  authoritarian?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  economicRight?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  economicLeft?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  libertarian?: number;
+}
+
+export class SettingsBody {
+  @IsOptional()
+  @IsBoolean()
+  isDarkMode?: boolean;
+}
 
 export class RegisterBody {
   @IsNotEmpty()
+  @IsString()
   username: string;
   @IsNotEmpty()
+  @IsString()
   password: string;
 
-  settings?: {
-    isDarkMode?: boolean;
-  }
-  interests?: {
-    authoritarian?: number;
-    economicRight?: number;
-    economicLeft?: number;
-    libertarian?: number;
-  }
+  @IsOptional()
+  @IsObject()
+  settings?: SettingsBody;
+
+  @IsOptional()
+  @IsObject()
+  interests?: InterestsBody;
 }
 
 @Controller('auth')

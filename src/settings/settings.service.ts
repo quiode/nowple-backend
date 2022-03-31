@@ -3,7 +3,7 @@ import { Settings } from '../entities/settings.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
-import { updateSettingsDto } from './settings.controller';
+import { SettingsBody } from '../auth/auth.controller';
 
 @Injectable()
 export class SettingsService {
@@ -14,11 +14,11 @@ export class SettingsService {
         return user.settings;
     }
 
-    async updateSettings(userId: string, body: updateSettingsDto): Promise<Settings> {
+    async updateSettings(userId: string, body: SettingsBody): Promise<Settings> {
         const user = await this.userRepository.findOne({ relations: ["settings"], where: { id: userId } });
 
         const settings = user.settings;
-        settings.isDarkMode = body.isDarkMode || settings.isDarkMode;
+        settings.isDarkMode = body.isDarkMode != null ? body.isDarkMode : settings.isDarkMode;
 
         await this.settingsRepository.save(settings);
 
