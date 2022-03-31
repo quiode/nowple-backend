@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { SettingsModule } from './settings/settings.module';
-import { PreferencesModule } from './preferences/preferences.module';
+import { InterestsModule } from './interests/interests.module';
 import { MessagesModule } from './messages/messages.module';
 import { SharedModule } from './shared/shared.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -14,7 +14,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     AuthModule,
     UserModule,
     SettingsModule,
-    PreferencesModule,
+    InterestsModule,
     MessagesModule,
     SharedModule,
     TypeOrmModule.forRoot(),
@@ -23,4 +23,4 @@ import { TypeOrmModule } from '@nestjs/typeorm';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

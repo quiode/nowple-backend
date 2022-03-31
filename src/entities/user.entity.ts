@@ -26,6 +26,10 @@ export class User {
   @JoinTable()
   matches: User[];
 
+  @ManyToMany(() => User, { nullable: true })
+  @JoinTable()
+  blocksOrDeclined: User[];
+
   @Column({ unique: true })
   username: string;
 
