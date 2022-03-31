@@ -10,6 +10,6 @@ import { SharedModule } from '../shared/shared.module';
   imports: [TypeOrmModule.forFeature([User]), SharedModule],
   controllers: [UserController],
   providers: [UserService],
-  exports: [UserService, TypeOrmModule],
+  exports: [UserService],
 })
 export class UserModule {}

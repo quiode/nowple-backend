@@ -13,10 +13,10 @@ export class RegisterBody {
   @IsNotEmpty()
   password: string;
 
-  settings?:{
+  settings?: {
     isDarkMode?: boolean;
   }
-  interests?:{
+  interests?: {
     authoritarian?: number;
     economicRight?: number;
     economicLeft?: number;
@@ -26,7 +26,7 @@ export class RegisterBody {
 
 @Controller('auth')
 export class AuthController {
-   constructor(private authService: AuthService, private userService: UserService) {}
+  constructor(private authService: AuthService, private userService: UserService) { }
 
   /**
    * requires password and username in body, returns a JWT

@@ -3,6 +3,7 @@ import { UserService } from '../user/user.service';
 import { User } from '../entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { SharedService } from '../shared/shared.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -15,8 +16,7 @@ export class AuthService {
     async validateUser(username: string, password: string): Promise<User | null> {
         const user = await this.userService.findOneByUsername(username);
         if (user == undefined) return null;
-        const hashedPassword = this.sharedService.hashPasswordSync(password);
-        if (user.password != hashedPassword) return null;
+        if (!bcrypt.compareSync(password, user.password)) return null;
         return user;
     }
 

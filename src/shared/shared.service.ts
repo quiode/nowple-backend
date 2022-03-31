@@ -17,4 +17,6 @@ export class SharedService {
     hashPasswordSync(password: string): string {
         return bcrypt.hashSync(password, this.saltRounds);
     }
+
+    
 }

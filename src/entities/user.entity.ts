@@ -26,7 +26,7 @@ export class User {
   @JoinTable()
   matches: User[];
 
-  @Column({unique: true})
+  @Column({ unique: true })
   username: string;
 
   @Column()
