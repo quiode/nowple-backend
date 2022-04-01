@@ -30,6 +30,10 @@ export class User {
   @JoinTable()
   blocksOrDeclined: User[];
 
+  @ManyToMany(() => User, { nullable: true })
+  @JoinTable()
+  contacts: User[];
+
   @Column({ unique: true })
   username: string;
 
