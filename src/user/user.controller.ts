@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseGuards, InternalServerErrorException, Param, BadRequestException, Patch, Body } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards, InternalServerErrorException, Param, BadRequestException, Patch, Body, Post } from '@nestjs/common';
 import { Request } from 'express';
 import { User } from 'src/entities/user.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -50,6 +50,28 @@ export class UserController {
         }
         const user = await this.userService.updateUser(req.user as User, req.body);
         const { password, ...returnVal } = user;
+        return returnVal;
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('block/:id')
+    async blockUser(@Req() req: Request, @Param('id') id: string) {
+        if (!(req.user as User)) {
+            throw new InternalServerErrorException('User not found');
+        }
+        const user = await this.userService.blockUser((req.user as User).id, id);
+        const { password, ...returnVal } = user;
+        return returnVal;
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('find')
+    async matchUser(@Req() req: Request) {
+        if (!(req.user as User)) {
+            throw new InternalServerErrorException('User not found');
+        }
+        const user = await this.userService.findNewContactPrecise((req.user as User).id);
+        const { password, matches, ...returnVal } = user;
         return returnVal;
     }
 }
