@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Interests } from 'src/entities/interests.entity';
 import { Settings } from 'src/entities/settings.entity';
@@ -73,8 +73,22 @@ export class UserService {
     return userToReturn;
   }
 
+  /**
+   * returns the public profile of a random user (stripped of sensitive information)
+   */
   async getPublicProfile(userID: string): Promise<User> {
     const userToReturn = await this.userRepository.findOne({ id: userID }, { relations: ['interests'] });
     return userToReturn;
+  }
+
+  async updateUser(user: User, update: any): Promise<User> {
+    const userToUpdate = await this.userRepository.findOne({ id: user.id });
+    if (userToUpdate === undefined) throw new BadRequestException('User not found');
+
+    userToUpdate.username = update.username ?? userToUpdate.username;
+    const passwordToHash = update.password ?? userToUpdate.password;
+    userToUpdate.password = this.sharedService.hashPasswordSync(passwordToHash);
+
+    return this.userRepository.save(userToUpdate);
   }
 }
