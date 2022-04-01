@@ -10,7 +10,7 @@ import { SharedService } from '../shared/shared.service';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectRepository(User) private userRepository: Repository<User>, private sharedService: SharedService) {}
+  constructor(@InjectRepository(User) private userRepository: Repository<User>, private sharedService: SharedService) { }
 
   /**
    * Finds a user by its username, shorthand for {@link findOneByUsername}
@@ -44,24 +44,37 @@ export class UserService {
    * creates a new user
    */
   async create(user: RegisterBody): Promise<User> {
-      if (await this.usernameExists(user.username)) throw new ConflictException('Username already exists');
+    if (await this.usernameExists(user.username)) throw new ConflictException('Username already exists');
 
-      const newUser = new User();
-      newUser.username = user.username;
-      newUser.password = this.sharedService.hashPasswordSync(user.password);
-      newUser.matches = [];
-      newUser.sentMessages = [];
-      newUser.receivedMessages = [];
+    const newUser = new User();
+    newUser.username = user.username;
+    newUser.password = this.sharedService.hashPasswordSync(user.password);
+    newUser.matches = [];
+    newUser.sentMessages = [];
+    newUser.receivedMessages = [];
 
-      newUser.settings = new Settings();
-      newUser.settings.isDarkMode = user.settings?.isDarkMode ?? false;
+    newUser.settings = new Settings();
+    newUser.settings.isDarkMode = user.settings?.isDarkMode ?? false;
 
-      newUser.interests = new Interests();
-      newUser.interests.authoritarian = user.interests?.authoritarian ?? null;
-      newUser.interests.economicRight = user.interests?.economicRight ?? null;
-      newUser.interests.economicLeft = user.interests?.economicLeft ?? null;
-      newUser.interests.libertarian = user.interests?.libertarian ?? null;
+    newUser.interests = new Interests();
+    newUser.interests.authoritarian = user.interests?.authoritarian ?? null;
+    newUser.interests.economicRight = user.interests?.economicRight ?? null;
+    newUser.interests.economicLeft = user.interests?.economicLeft ?? null;
+    newUser.interests.libertarian = user.interests?.libertarian ?? null;
 
-      return this.userRepository.save(newUser);
+    return this.userRepository.save(newUser);
+  }
+
+  /**
+   * returns a user with all properties (settings, messages, contacts usw.)
+   */
+  async getFullUser(user: User): Promise<User> {
+    const userToReturn = await this.userRepository.findOne({ id: user.id }, { relations: ['settings', 'interests', 'sentMessages', 'receivedMessages', 'matches', "blocksOrDeclined", "contacts"] });
+    return userToReturn;
+  }
+
+  async getPublicProfile(userID: string): Promise<User> {
+    const userToReturn = await this.userRepository.findOne({ id: userID }, { relations: ['interests'] });
+    return userToReturn;
   }
 }
