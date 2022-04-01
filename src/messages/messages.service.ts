@@ -41,4 +41,13 @@ export class MessagesService {
 
         return sentMessage;
     }
+
+    async getRange(senderID: string, receiverID: string, start: number, end: number): Promise<Message[]> {
+        // error if sender or receiver not found
+        if (!this.userRepository.findOne({ id: senderID })) throw new BadRequestException('Sender not found');
+        if (!this.userRepository.findOne({ id: receiverID })) throw new BadRequestException('Receiver not found');
+
+        const messages = await this.messageRepository.find({ where: { receiver: { id: receiverID }, sender: { id: senderID } }, relations: ['sender', 'receiver'], order: { time: 'ASC' }, skip: start, take: end });
+        return messages;
+    }
 }
