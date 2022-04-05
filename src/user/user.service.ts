@@ -56,10 +56,11 @@ export class UserService {
     newUser.settings.isDarkMode = user.settings?.isDarkMode ?? false;
 
     newUser.interests = new Interests();
-    newUser.interests.authoritarian = user.interests?.authoritarian ?? null;
-    newUser.interests.economicRight = user.interests?.economicRight ?? null;
-    newUser.interests.economicLeft = user.interests?.economicLeft ?? null;
-    newUser.interests.libertarian = user.interests?.libertarian ?? null;
+    newUser.interests.civil = user.interests?.civil ?? null;
+    newUser.interests.diplomatic = user.interests?.diplomatic ?? null;
+    newUser.interests.economic = user.interests?.economic ?? null;
+    newUser.interests.society = user.interests?.society ?? null;
+    newUser.interests.ideology = user.interests?.ideology ?? null;
 
     return this.userRepository.save(newUser);
   }

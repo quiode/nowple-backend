@@ -1,18 +1,23 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Ideology } from '../shared/ideologies';
 @Entity()
 export class Interests {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({nullable: true})
-  authoritarian: number;
+  // https://8values.github.io/ 
+  @Column({ nullable: true })
+  economic: number;
 
-  @Column({nullable: true})
-  economicRight: number;
+  @Column({ nullable: true })
+  diplomatic: number;
 
-  @Column({nullable: true})
-  economicLeft: number;
+  @Column({ nullable: true })
+  civil: number;
 
-  @Column({nullable: true})
-  libertarian: number;
+  @Column({ nullable: true })
+  society: number;
+
+  @Column({ nullable: true, type: 'enum', enum: Ideology })
+  ideology: Ideology;
 }

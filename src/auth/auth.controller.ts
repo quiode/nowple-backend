@@ -4,28 +4,33 @@ import { AuthService } from './auth.service';
 import { User } from '../entities/user.entity';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { UserService } from '../user/user.service';
-import { IsBoolean, IsNotEmpty, IsNumber, IsObject, IsOptional, IsPositive, IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, IsPositive, IsString } from 'class-validator';
+import { Ideology } from '../shared/ideologies';
 
 export class InterestsBody {
   @IsOptional()
   @IsNumber()
   @IsPositive()
-  authoritarian?: number;
+  economic?: number;
 
   @IsOptional()
   @IsNumber()
   @IsPositive()
-  economicRight?: number;
+  diplomatic?: number;
 
   @IsOptional()
   @IsNumber()
   @IsPositive()
-  economicLeft?: number;
+  civil?: number;
 
   @IsOptional()
   @IsNumber()
   @IsPositive()
-  libertarian?: number;
+  society?: number;
+
+  @IsOptional()
+  @IsEnum(Ideology)
+  ideology?: Ideology;
 }
 
 export class SettingsBody {

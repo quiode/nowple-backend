@@ -24,10 +24,11 @@ export class InterestsService {
         const user = await this.userRepository.findOne({ id: userId }, { relations: ['interests'] });
 
         const interests: Interests = user.interests;
-        interests.authoritarian = body.authoritarian ?? interests.authoritarian;
-        interests.libertarian = body.libertarian ?? interests.libertarian;
-        interests.economicLeft = body.economicLeft ?? interests.economicLeft;
-        interests.economicRight = body.economicRight ?? interests.economicRight;
+        interests.civil = body.civil ?? interests.civil;
+        interests.diplomatic = body.civil ?? interests.civil;
+        interests.economic = body.economic ?? interests.economic;
+        interests.society = body.society ?? interests.society;
+        interests.ideology = body.ideology ?? interests.ideology;
 
         return this.interestsRepository.save(interests);
     }
