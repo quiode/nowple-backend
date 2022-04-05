@@ -1,3 +1,5 @@
+// Source: https://github.com/8values/8values.github.io
+
 export const ideologies = [
     {
         "name": "Anarcho-Communism",
