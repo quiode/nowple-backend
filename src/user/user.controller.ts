@@ -67,7 +67,6 @@ export class UserController {
     @UseGuards(JwtAuthGuard)
     @Post('find')
     async matchUser(@Req() req: Request) {
-        console.log(req.user);
         if (!(req.user as User)) {
             throw new InternalServerErrorException('User not found');
         }
