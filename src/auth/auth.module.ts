@@ -7,7 +7,6 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from '../shared/constants';
 import { JwtStrategy } from './jwt.strategy';
-import { UserService } from '../user/user.service';
 import { SharedModule } from '../shared/shared.module';
 
 @Module({
@@ -24,4 +23,4 @@ import { SharedModule } from '../shared/shared.module';
   providers: [AuthService, LocalStrategy, JwtStrategy],
   exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }
