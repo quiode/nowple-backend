@@ -2,7 +2,7 @@ import { Controller, Get, Req, UseGuards, InternalServerErrorException, Param, B
 import { Request } from 'express';
 import { User } from 'src/entities/user.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { UserService } from './user.service';
+import { UserService, Chat } from './user.service';
 import { IsOptional, IsString } from 'class-validator';
 
 export class UserDto {
@@ -29,7 +29,7 @@ export class UserController {
     }
 
     @UseGuards(JwtAuthGuard)
-    @Get(':id')
+    @Get('public/:id')
     async getUser(@Req() req: Request, @Param('id') id: string) {
         if (!(req.user as User)) {
             throw new InternalServerErrorException('User not found');
@@ -67,11 +67,29 @@ export class UserController {
     @UseGuards(JwtAuthGuard)
     @Post('find')
     async matchUser(@Req() req: Request) {
+        console.log(req.user);
         if (!(req.user as User)) {
             throw new InternalServerErrorException('User not found');
         }
         const user = await this.userService.findNewContactPrecise((req.user as User).id);
-        const { password, matches, ...returnVal } = user;
+        const { password, matches, contacts, ...returnVal } = user;
         return returnVal;
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('chats')
+    async getChats(@Req() req: Request) {
+        if (!(req.user as User)) {
+            throw new InternalServerErrorException('User not found');
+        }
+        const chats: Chat[] = await this.userService.getChats((req.user as User).id);
+        // remove password and other sensitive data
+        const strippedChats = chats.map(
+            chat => {
+                const { password, ...user } = chat.user;
+                return { user, lastMessage: chat.lastMessage };
+            }
+        )
+        return strippedChats;
     }
 }

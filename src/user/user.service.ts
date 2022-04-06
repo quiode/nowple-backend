@@ -3,13 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Interests } from 'src/entities/interests.entity';
 import { Settings } from 'src/entities/settings.entity';
 import { User } from 'src/entities/user.entity';
-import { In, Not, Repository } from 'typeorm';
+import { Any, In, Not, Raw, Repository } from 'typeorm';
 import { RegisterBody } from '../auth/auth.controller';
 import { SharedService } from '../shared/shared.service';
+import { Message } from '../entities/message.entity';
+
+export interface Chat { user: User, lastMessage?: Message }
 
 @Injectable()
 export class UserService {
-  constructor(@InjectRepository(User) private userRepository: Repository<User>, private sharedService: SharedService) { }
+  constructor(@InjectRepository(User) private userRepository: Repository<User>, private sharedService: SharedService, @InjectRepository(Message) private messageRepository: Repository<Message>) { }
 
   /**
    * Finds a user by its username, shorthand for {@link findOneByUsername}
@@ -127,13 +130,15 @@ export class UserService {
         ])
         )
       },
-      relations: ['matches']
+      relations: ['matches', 'contacts']
     });
 
     const match = matches[Math.floor(Math.random() * matches.length)]
     if (match === undefined) throw new BadRequestException('No matches found');
     user.matches = [...user.matches, match];
     match.matches = [...match.matches, user];
+    user.contacts = [...user.contacts, match];
+    match.contacts = [...match.contacts, user];
     await this.userRepository.save(user);
     await this.userRepository.save(match);
 
@@ -146,5 +151,55 @@ export class UserService {
   async findNewContactPrecise(userID: string): Promise<User> {
     // TODO: implement
     return this.findNewContact(userID);
+  }
+
+  /**
+   * finds all current open chats and returns the receiver and the last message
+   */
+  async getChats(id: string): Promise<Chat[]> {
+    const user = await this.userRepository.findOne({ id }, { relations: ['matches', 'contacts', 'blocksOrDeclined'] });
+
+    if (user == undefined) throw new BadRequestException('User not found');
+
+    // get all chats where id is in matches or contacts but not in blocksOrDeclined and vise versa
+    let tUsers: User[] = [];
+    if (user.matches.length > 0 && user.contacts.length > 0) {
+      tUsers = await this.userRepository.find({
+        where: {
+          id: Raw(alias => `
+        ${alias} IN (${user.matches.map(match => "'" + match.id + "'").join(', ')}, ${user.contacts.map(contact => "'" + contact.id + "'").join(', ')})
+        AND
+        ${alias} NOT IN (${[...user.blocksOrDeclined.map(block => "'" + block.id + "'"), "'" + user.id + "'"].join(', ')})
+        `)
+        }
+      });
+    }
+    const users = tUsers;
+
+    const chats: Chat[] = [];
+
+    for (let i = 0; i < users.length; i++) {
+      const contact = users[i];
+
+      const lastMessage = await this.messageRepository.find({
+        where: {
+          sender: Any([contact.id, user.id]),
+          receiver: Any([contact.id, user.id]),
+        },
+        order: {
+          time: "DESC"
+        },
+        relations: ['sender', 'receiver'],
+        take: 1
+      }
+      );
+
+      chats.push({
+        user: contact,
+        lastMessage: lastMessage[0]
+      });
+    }
+
+    return chats;
   }
 }
