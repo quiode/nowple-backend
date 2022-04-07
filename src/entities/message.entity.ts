@@ -14,4 +14,7 @@ export class Message {
 
   @Column({ type: 'timestamp' })
   time: Date;
+
+  @Column({ default: false })
+  isTopic: boolean;
 }
