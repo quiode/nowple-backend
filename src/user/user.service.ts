@@ -235,7 +235,7 @@ export class UserService {
   }
 
   async getPublicProfilePicture(userID: string, profileID: string): Promise<fs.ReadStream> {
-    const user = await this.userRepository.findOne({ id: userID });
+    const user = await this.userRepository.findOne({ id: userID }, { relations: ['contacts', 'matches', 'blocksOrDeclined'] });
     const profile = await this.userRepository.findOne({ id: profileID }, { relations: ['contacts', 'matches', 'blocksOrDeclined'] });
 
     // test if accounts exists
