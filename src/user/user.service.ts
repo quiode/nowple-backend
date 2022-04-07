@@ -243,8 +243,8 @@ export class UserService {
     if (profile === undefined) throw new BadRequestException('Profile not found');
 
     // test if user is blocked or not in contacts or matches
-    if (user.blocksOrDeclined.find(block => block.id === profile.id) !== undefined) throw new ForbiddenException('User is blocked');
-    if (user.contacts.find(contact => contact.id === profile.id) === undefined && user.matches.find(match => match.id === profile.id) === undefined) throw new ForbiddenException('User is not in your contacts or matches');
+    if (user.blocksOrDeclined && user.blocksOrDeclined.find(block => block.id === profile.id) !== undefined) throw new ForbiddenException('User is blocked');
+    if (!user.contacts || user.contacts.find(contact => contact.id === profile.id) === undefined && user.matches.find(match => match.id === profile.id) === undefined) throw new ForbiddenException('User is not in your contacts or matches');
 
     // check if profile picture exists
     if (!profile.profilePicture) throw new NotFoundException('Profile picture not found');
