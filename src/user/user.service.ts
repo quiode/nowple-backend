@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, BadRequestException } from '@nestjs/common';
+import { ConflictException, Injectable, BadRequestException, NotFoundException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Interests } from 'src/entities/interests.entity';
 import { Settings } from 'src/entities/settings.entity';
@@ -7,6 +7,8 @@ import { Any, In, Not, Raw, Repository } from 'typeorm';
 import { RegisterBody } from '../auth/auth.controller';
 import { SharedService } from '../shared/shared.service';
 import { Message } from '../entities/message.entity';
+import * as fs from 'fs';
+import { extname } from 'path';
 
 export interface Chat { user: User, lastMessage?: Message }
 
@@ -120,7 +122,7 @@ export class UserService {
     const user = await this.userRepository.findOne({ id: userID }, { relations: ['matches', 'contacts', 'blocksOrDeclined'] });
     if (user === undefined) throw new BadRequestException('User not found');
 
-    const matches = await this.userRepository.find({
+    const contacts = await this.userRepository.find({
       where: {
         id: Not(In([
           user.id,
@@ -133,16 +135,14 @@ export class UserService {
       relations: ['matches', 'contacts']
     });
 
-    const match = matches[Math.floor(Math.random() * matches.length)]
-    if (match === undefined) throw new BadRequestException('No matches found');
-    user.matches = [...user.matches, match];
-    match.matches = [...match.matches, user];
-    user.contacts = [...user.contacts, match];
-    match.contacts = [...match.contacts, user];
+    const contact = contacts[Math.floor(Math.random() * contacts.length)]
+    if (contact === undefined) throw new BadRequestException('No Contacts found');
+    user.contacts = [...user.contacts, contact];
+    contact.contacts = [...contact.contacts, user];
     await this.userRepository.save(user);
-    await this.userRepository.save(match);
+    await this.userRepository.save(contact);
 
-    return match;
+    return contact;
   }
 
   /**
@@ -201,5 +201,56 @@ export class UserService {
     }
 
     return chats;
+  }
+
+  async saveProfilePicture(userID: string, file: Express.Multer.File): Promise<void> {
+    const user = await this.userRepository.findOne({ id: userID });
+
+    if (user === undefined) throw new BadRequestException('User not found');
+
+    // move file to profile pictures folder
+    fs.mkdirSync(process.cwd() + '/assets/profilePictures', { recursive: true });
+    const fileName = userID + extname(file.originalname);
+    const filePath = process.cwd() + '/assets/profilePictures/' + fileName;
+
+    fs.copyFileSync(file.path, filePath);
+
+    fs.rmSync(file.path, { recursive: true, force: true });
+
+    user.profilePicture = fileName;
+    await this.userRepository.save(user);
+    return;
+  }
+
+  async getProfilePicture(userID: string): Promise<fs.ReadStream> {
+    const user = await this.userRepository.findOne({ id: userID });
+
+    if (user === undefined) throw new BadRequestException('User not found');
+
+    if (!user.profilePicture) throw new NotFoundException('Profile picture not found');
+
+    const file = fs.createReadStream(process.cwd() + '/assets/profilePictures/' + user.profilePicture);
+
+    return file;
+  }
+
+  async getPublicProfilePicture(userID: string, profileID: string): Promise<fs.ReadStream> {
+    const user = await this.userRepository.findOne({ id: userID });
+    const profile = await this.userRepository.findOne({ id: profileID }, { relations: ['contacts', 'matches', 'blocksOrDeclined'] });
+
+    // test if accounts exists
+    if (user === undefined) throw new BadRequestException('User not found');
+    if (profile === undefined) throw new BadRequestException('Profile not found');
+
+    // test if user is blocked or not in contacts or matches
+    if (user.blocksOrDeclined.find(block => block.id === profile.id) !== undefined) throw new ForbiddenException('User is blocked');
+    if (user.contacts.find(contact => contact.id === profile.id) === undefined && user.matches.find(match => match.id === profile.id) === undefined) throw new ForbiddenException('User is not in your contacts or matches');
+
+    // check if profile picture exists
+    if (!profile.profilePicture) throw new NotFoundException('Profile picture not found');
+
+    // get files
+    const profilePicture = fs.createReadStream(process.cwd() + '/assets/profilePictures/' + profile.profilePicture);
+    return profilePicture;
   }
 }

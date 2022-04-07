@@ -54,6 +54,10 @@ export class RegisterBody {
   @IsOptional()
   @IsObject()
   interests?: InterestsBody;
+
+  @IsOptional()
+  @IsString()
+  profilePicture?: string;
 }
 
 @Controller('auth')

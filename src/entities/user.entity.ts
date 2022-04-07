@@ -39,4 +39,7 @@ export class User {
 
   @Column()
   password: string;
+
+  @Column({ nullable: true })
+  profilePicture: string;
 }
