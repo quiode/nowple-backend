@@ -163,11 +163,11 @@ export class UserService {
 
     // get all chats where id is in matches or contacts but not in blocksOrDeclined and vise versa
     let tUsers: User[] = [];
-    if (user.matches.length > 0 && user.contacts.length > 0) {
+    if (user.matches.length > 0 || user.contacts.length > 0) {
       tUsers = await this.userRepository.find({
         where: {
           id: Raw(alias => `
-        ${alias} IN (${user.matches.map(match => "'" + match.id + "'").join(', ')}, ${user.contacts.map(contact => "'" + contact.id + "'").join(', ')})
+        ${alias} IN (${[...user.matches.map(match => "'" + match.id + "'"), user.contacts.map(contact => "'" + contact.id + "'")].join(', ')})
         AND
         ${alias} NOT IN (${[...user.blocksOrDeclined.map(block => "'" + block.id + "'"), "'" + user.id + "'"].join(', ')})
         `)
