@@ -1,5 +1,5 @@
 import { Controller, Post, UseGuards, Req, InternalServerErrorException, Param, Body, Get, ParseUUIDPipe, Sse, MessageEvent, ParseIntPipe } from '@nestjs/common';
-import { IsDate, IsNotEmpty, IsString } from 'class-validator';
+import { IsDate, IsDateString, IsNotEmpty, IsString } from 'class-validator';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { Message } from 'src/entities/message.entity';
@@ -13,8 +13,8 @@ export class MessageSendDto {
     message: string
 
     @IsNotEmpty()
-    @IsDate()
-    date: Date
+    @IsDateString()
+    date: string;
 }
 
 @Controller('messages')
@@ -26,11 +26,14 @@ export class MessagesController {
      */
     @UseGuards(JwtAuthGuard)
     @Post('send/:id')
-    async send(@Param('id') id: string, @Req() req: Request, @Body() body: MessageSendDto): Promise<Message> {
+    async send(@Param('id') id: string, @Req() req: Request, @Body() body: MessageSendDto) {
         if (!(req.user as User)) {
             throw new InternalServerErrorException('User not found');
         }
-        return this.messagesService.sendMessage((req.user as User).id, id, body);
+        const message: Message = await this.messagesService.sendMessage((req.user as User).id, id, body);
+        // strip topic of sensitive data
+        const { receiver, sender, ...strippedMessage } = message;
+        return strippedMessage;
     }
 
     // /**
@@ -62,11 +65,14 @@ export class MessagesController {
      */
     @UseGuards(JwtAuthGuard)
     @Get('topic/:id')
-    async generateNewTopic(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request): Promise<Message> {
+    async generateNewTopic(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
         if (!(req.user as User)) {
             throw new InternalServerErrorException('User not found');
         }
-        return this.messagesService.generateNewTopic((req.user as User).id, id);
+        const topic: Message = await this.messagesService.generateNewTopic((req.user as User).id, id);
+        // strip topic of sensitive data
+        const { receiver, sender, ...strippedTopic } = topic;
+        return strippedTopic;
     }
 
     /**

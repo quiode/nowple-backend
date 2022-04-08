@@ -45,18 +45,9 @@ export class MessagesService {
         newMessage.sender = sender;
         newMessage.receiver = receiver;
         newMessage.message = message.message;
-        newMessage.time = message.date;
+        newMessage.time = new Date(message.date);
 
         const sentMessage = await this.messageRepository.save(newMessage);
-
-        // adds message to sender's messages
-        sender.sentMessages.push(sentMessage);
-        this.userRepository.save(sender);
-
-        // adds message to receiver's messages
-        receiver.receivedMessages.push(sentMessage);
-        this.userRepository.save(receiver);
-
         return sentMessage;
     }
 
@@ -65,7 +56,7 @@ export class MessagesService {
         if (!this.userRepository.findOne({ id: senderID })) throw new BadRequestException('Sender not found');
         if (!this.userRepository.findOne({ id: receiverID })) throw new BadRequestException('Receiver not found');
 
-        const messages = await this.messageRepository.find({ where: { receiver: { id: receiverID }, sender: { id: senderID } }, relations: ['sender', 'receiver'], order: { time: 'ASC' }, skip: start, take: end });
+        const messages = await this.messageRepository.find({ where: { receiver: { id: In([receiverID, senderID]) }, sender: { id: In([receiverID, senderID]) } }, relations: ['sender', 'receiver'], order: { time: 'ASC' }, skip: start, take: end });
         return messages;
     }
 
@@ -84,14 +75,8 @@ export class MessagesService {
         topic.time = new Date();
         topic.isTopic = true;
 
-        // add topic
-        sender.sentMessages.push(topic);
-        receiver.receivedMessages.push(topic);
-
         // save topic
         const message = await this.messageRepository.save(topic);
-        await this.userRepository.save(sender);
-        await this.userRepository.save(receiver);
         return message;
     }
 
