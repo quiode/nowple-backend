@@ -7,13 +7,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { topics } from './topics';
 import { Observable, Subject } from 'rxjs';
 import { MessageEntitySubscriberService } from './message.entity.subscriber.service';
+import { MessageChatEvent } from './messages.controller';
 
 export interface MessageStreamCache {
     receiver: string;
     sender: string;
     messages: Message[];
     initialAmount: number;
-    subject: Subject<MessageEvent>;
+    subject: Subject<MessageChatEvent>;
 }
 
 @Injectable()
@@ -80,13 +81,13 @@ export class MessagesService {
         return message;
     }
 
-    getAmountStream(senderID: string, receiverID: string, amount: number): Observable<MessageEvent> {
+    getAmountStream(senderID: string, receiverID: string, amount: number): Observable<MessageChatEvent> {
         const cache: MessageStreamCache = {
             receiver: receiverID,
             sender: senderID,
             messages: [],
             initialAmount: amount,
-            subject: new Subject<MessageEvent>(),
+            subject: new Subject<MessageChatEvent>(),
         }
 
         this.messageStreamCache.push(cache);

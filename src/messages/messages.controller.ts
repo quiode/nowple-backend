@@ -17,6 +17,10 @@ export class MessageSendDto {
     date: string;
 }
 
+export interface MessageChatEvent extends MessageEvent {
+    data: Message[];
+}
+
 @Controller('messages')
 export class MessagesController {
     constructor(private messagesService: MessagesService) { }
@@ -87,7 +91,9 @@ export class MessagesController {
         req.on('close', () => {
             this.messagesService.removeChat((req.user as User).id, id);
         });
-        return this.messagesService.getAmountStream((req.user as User).id, id, 100);
+        // ! TODO: strip topic of sensitive data
+        const stream = this.messagesService.getAmountStream((req.user as User).id, id, 100);
+        return;
     }
 
     /**
@@ -102,6 +108,7 @@ export class MessagesController {
         req.on('close', () => {
             this.messagesService.removeChat((req.user as User).id, id);
         });
+        // ! TODO: strip topic of sensitive data
         return this.messagesService.getAmountStream((req.user as User).id, id, amount);
     }
 }
