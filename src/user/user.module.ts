@@ -6,6 +6,7 @@ import { User } from '../entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../shared/shared.module';
 import { Message } from '../entities/message.entity';
+import { MessagesModule } from '../messages/messages.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Message]), SharedModule],

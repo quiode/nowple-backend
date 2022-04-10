@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, BadRequestException, NotFoundException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { ConflictException, Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Interests } from 'src/entities/interests.entity';
 import { Settings } from 'src/entities/settings.entity';
@@ -142,6 +142,7 @@ export class UserService {
     contact.contacts = [...contact.contacts, user];
     await this.userRepository.save(user);
     await this.userRepository.save(contact);
+    this.sharedService.generateNewTopic(user.id, contact.id)
 
     return contact;
   }

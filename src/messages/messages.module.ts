@@ -6,10 +6,12 @@ import { Message } from '../entities/message.entity';
 import { User } from '../entities/user.entity';
 import { MessageEntitySubscriberService } from './message.entity.subscriber.service';
 import { AuthModule } from '../auth/auth.module';
+import { SharedModule } from '../shared/shared.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Message, User]), AuthModule],
+  imports: [TypeOrmModule.forFeature([Message, User]), AuthModule, SharedModule],
   controllers: [MessagesController],
-  providers: [MessagesService, MessageEntitySubscriberService]
+  providers: [MessagesService, MessageEntitySubscriberService],
+  exports: [MessagesService],
 })
 export class MessagesModule { }

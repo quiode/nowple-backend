@@ -1,12 +1,13 @@
-import { Controller, Post, UseGuards, Req, InternalServerErrorException, Param, Body, Get, ParseUUIDPipe, Sse, MessageEvent, ParseIntPipe, ForbiddenException } from '@nestjs/common';
-import { IsDate, IsDateString, IsNotEmpty, IsString } from 'class-validator';
+import { Controller, Post, UseGuards, Req, InternalServerErrorException, Param, Body, Get, ParseUUIDPipe, Sse, MessageEvent } from '@nestjs/common';
+import { IsDateString, IsNotEmpty, IsString } from 'class-validator';
 import { Request } from 'express';
-import { interval, map, Observable } from 'rxjs';
+import { map } from 'rxjs';
 import { Message } from 'src/entities/message.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { User } from '../entities/user.entity';
 import { MessagesService } from './messages.service';
 import { AuthService } from '../auth/auth.service';
+import { SharedService } from '../shared/shared.service';
 
 export class MessageSendDto {
     @IsNotEmpty()
@@ -24,7 +25,7 @@ export interface MessageChatEvent extends MessageEvent {
 
 @Controller('messages')
 export class MessagesController {
-    constructor(private messagesService: MessagesService, private authService: AuthService) { }
+    constructor(private messagesService: MessagesService, private authService: AuthService, private sharedService: SharedService) { }
 
     /**
      * sends a message to a user
@@ -74,7 +75,7 @@ export class MessagesController {
         if (!(req.user as User)) {
             throw new InternalServerErrorException('User not found');
         }
-        const topic: Message = await this.messagesService.generateNewTopic((req.user as User).id, id);
+        const topic: Message = await this.sharedService.generateNewTopic((req.user as User).id, id);
         // strip topic of sensitive data
         const { receiver, sender, ...strippedTopic } = topic;
         return strippedTopic;
@@ -101,10 +102,4 @@ export class MessagesController {
             })
         );
     }
-
-    // @Sse('test')
-    // async test() {
-    //     return interval(1000).pipe(map((_) =>
-    //         ({ data: { hello: 'world' } })));
-    // }
 }

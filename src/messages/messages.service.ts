@@ -1,14 +1,14 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException, MessageEvent } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { Message } from '../entities/message.entity';
 import { MessageSendDto } from './messages.controller';
 import { In, MoreThan, Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { topics } from './topics';
-import { Observable, Subject, interval } from 'rxjs';
+import { Subject, interval } from 'rxjs';
 import { MessageEntitySubscriberService } from './message.entity.subscriber.service';
 import { MessageChatEvent } from './messages.controller';
 import { randomUUID } from 'crypto';
+import { SharedService } from '../shared/shared.service';
 
 export interface MessageStreamCache {
     id: string;
@@ -22,7 +22,7 @@ export interface MessageStreamCache {
 @Injectable()
 export class MessagesService {
     messageStreamCache: MessageStreamCache[] = [];
-    constructor(@InjectRepository(User) private userRepository: Repository<User>, @InjectRepository(Message) private messageRepository: Repository<Message>, private messageEntitySubscriberService: MessageEntitySubscriberService) {
+    constructor(@InjectRepository(User) private userRepository: Repository<User>, @InjectRepository(Message) private messageRepository: Repository<Message>, private messageEntitySubscriberService: MessageEntitySubscriberService, private sharedService: SharedService) {
         // to not auto-disconnect
         interval(10000).subscribe(() => {
             this.messageStreamCache.forEach(cache => {
@@ -46,7 +46,7 @@ export class MessagesService {
     }
 
     async sendMessage(receiverID: string, senderID: string, message: MessageSendDto): Promise<Message> {
-        if (!(await this.userSenderFriendly(senderID, receiverID))) {
+        if (!(await this.sharedService.userSenderFriendly(senderID, receiverID))) {
             throw new BadRequestException('User and sender are not in each others contacts or blocked or declined');
         }
         const sender = await this.userRepository.findOne({ id: senderID }, { relations: ['sentMessages', 'contacts', 'blocksOrDeclined'] });
@@ -72,26 +72,6 @@ export class MessagesService {
         return messages;
     }
 
-    async generateNewTopic(senderID: string, receiverID: string): Promise<Message> {
-        if (!(await this.userSenderFriendly(senderID, receiverID))) {
-            throw new BadRequestException('User and sender are not in each others contacts or blocked or declined');
-        }
-        const sender = await this.userRepository.findOne({ id: senderID }, { relations: ['sentMessages', 'contacts', 'blocksOrDeclined'] });
-        const receiver = await this.userRepository.findOne({ id: receiverID }, { relations: ['receivedMessages', 'contacts', 'blocksOrDeclined'] });
-
-        // generate topic
-        const topic = new Message();
-        topic.sender = sender;
-        topic.receiver = receiver;
-        topic.message = topics[Math.floor(Math.random() * topics.length)].topic;
-        topic.time = new Date();
-        topic.isTopic = true;
-
-        // save topic
-        const message = await this.messageRepository.save(topic);
-        return message;
-    }
-
     getAmountStream(senderID: string, receiverID: string, amount: number): MessageStreamCache {
         const cache: MessageStreamCache = {
             id: randomUUID(),
@@ -114,30 +94,8 @@ export class MessagesService {
         return cache;
     }
 
-    /**
-     * checks if the user and sender exist, are in each others contacts and not blocked or declined
-     */
-    async userSenderFriendly(senderID: string, receiverID: string): Promise<boolean> {
-        // error if sender or receiver not found
-        if (!this.userRepository.findOne({ id: senderID })) throw new NotFoundException('Sender not found');
-        if (!this.userRepository.findOne({ id: receiverID })) throw new NotFoundException('Receiver not found');
-
-        const sender = await this.userRepository.findOne({ id: senderID }, { relations: ['contacts', 'blocksOrDeclined'] });
-        if (!sender) throw new NotFoundException('Sender not found');
-        const receiver = await this.userRepository.findOne({ id: receiverID }, { relations: ['contacts', 'blocksOrDeclined'] });
-        if (!receiver) throw new NotFoundException('Receiver not found');
-
-        // check if user and receiver are in each others contacts and not blocked or declined
-        if (sender.blocksOrDeclined.find(blockOrDecline => blockOrDecline.id === receiverID)) throw new BadRequestException('You have blocked this user!');
-        if (receiver.blocksOrDeclined.find(blockOrDecline => blockOrDecline.id === senderID)) throw new ForbiddenException('This user has blocked you!');
-        if (!sender.contacts.find(contact => contact.id === receiverID)) throw new BadRequestException('This user is not in your contacts!');
-        if (!receiver.contacts.find(contact => contact.id === senderID)) throw new BadRequestException('You are not in this user\'s contacts!');
-
-        return true;
-    }
-
     async checkForNewMessages(cachedMessages: MessageStreamCache): Promise<Message[]> {
-        if (!await this.userSenderFriendly(cachedMessages.sender, cachedMessages.receiver)) {
+        if (!await this.sharedService.userSenderFriendly(cachedMessages.sender, cachedMessages.receiver)) {
             return [];
         }
 
