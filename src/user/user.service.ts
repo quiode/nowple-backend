@@ -9,6 +9,8 @@ import { SharedService } from '../shared/shared.service';
 import { Message } from '../entities/message.entity';
 import * as fs from 'fs';
 import { extname } from 'path';
+import { StreamableFileOptions } from '@nestjs/common/file-stream/streamable-options.interface';
+import * as mime from 'mime-types';
 
 export interface Chat { user: User, lastMessage?: Message }
 
@@ -222,19 +224,27 @@ export class UserService {
     return;
   }
 
-  async getProfilePicture(userID: string): Promise<fs.ReadStream> {
+  async getProfilePicture(userID: string): Promise<{ stream: fs.ReadStream, options: StreamableFileOptions }> {
     const user = await this.userRepository.findOne({ id: userID });
 
     if (user === undefined) throw new BadRequestException('User not found');
 
     if (!user.profilePicture) throw new NotFoundException('Profile picture not found');
 
-    const file = fs.createReadStream(process.cwd() + '/assets/profilePictures/' + user.profilePicture);
+    // get file
+    const path = process.cwd() + '/assets/profilePictures/' + user.profilePicture;
 
-    return file;
+    const options: StreamableFileOptions = {
+      length: fs.statSync(path).size,
+      type: mime.lookup(path) || 'application/octet-stream',
+    }
+
+    const file = fs.createReadStream(path);
+
+    return { stream: file, options };
   }
 
-  async getPublicProfilePicture(userID: string, profileID: string): Promise<fs.ReadStream> {
+  async getPublicProfilePicture(userID: string, profileID: string): Promise<{ stream: fs.ReadStream, options: StreamableFileOptions }> {
     const user = await this.userRepository.findOne({ id: userID }, { relations: ['contacts', 'matches', 'blocksOrDeclined'] });
     const profile = await this.userRepository.findOne({ id: profileID }, { relations: ['contacts', 'matches', 'blocksOrDeclined'] });
 
@@ -250,7 +260,14 @@ export class UserService {
     if (!profile.profilePicture) throw new NotFoundException('Profile picture not found');
 
     // get files
-    const profilePicture = fs.createReadStream(process.cwd() + '/assets/profilePictures/' + profile.profilePicture);
-    return profilePicture;
+    const path = process.cwd() + '/assets/profilePictures/' + profile.profilePicture;
+
+    const profilePicture = fs.createReadStream(path);
+    const options: StreamableFileOptions = {
+      length: fs.statSync(path).size,
+      type: mime.lookup(path) || 'application/octet-stream',
+    }
+
+    return { stream: profilePicture, options };
   }
 }

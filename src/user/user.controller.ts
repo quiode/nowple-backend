@@ -1,5 +1,5 @@
-import { Controller, Get, Req, UseGuards, InternalServerErrorException, Param, BadRequestException, Patch, Body, Post, ParseUUIDPipe, UseInterceptors, UploadedFile, StreamableFile } from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Get, Req, UseGuards, InternalServerErrorException, Param, BadRequestException, Patch, Body, Post, ParseUUIDPipe, UseInterceptors, UploadedFile, StreamableFile, Res } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { User } from 'src/entities/user.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserService, Chat } from './user.service';
@@ -106,11 +106,13 @@ export class UserController {
 
     @UseGuards(JwtAuthGuard)
     @Get('profilePicture')
-    async getProfilePicture(@Req() req: Request): Promise<StreamableFile> {
+    async getProfilePicture(@Req() req: Request, @Res() res: Response): Promise<StreamableFile> {
         if (!(req.user as User)) {
             throw new InternalServerErrorException('User not found');
         }
-        return new StreamableFile(await this.userService.getProfilePicture((req.user as User).id));
+        const profile = await this.userService.getProfilePicture((req.user as User).id);
+        return new StreamableFile(profile.stream, profile.options);
+
     }
 
     @UseGuards(JwtAuthGuard)
@@ -119,6 +121,7 @@ export class UserController {
         if (!(req.user as User)) {
             throw new InternalServerErrorException('User not found');
         }
-        return new StreamableFile(await this.userService.getPublicProfilePicture((req.user as User).id, id));
+        const profile = await this.userService.getPublicProfilePicture((req.user as User).id, id);
+        return new StreamableFile(profile.stream, profile.options);
     }
 }
