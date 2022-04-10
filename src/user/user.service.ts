@@ -228,7 +228,7 @@ export class UserService {
 
     const path = process.cwd() + '/assets/profilePictures/' + user.profilePicture;
 
-    const file = fs.createReadStream(path);
+    const file = fs.readFileSync(path);
 
     return file;
   }
@@ -238,7 +238,7 @@ export class UserService {
 
     // get files
     const path = process.cwd() + '/assets/profilePictures/' + profile.profilePicture;
-    const profilePicture = fs.createReadStream(path);
+    const profilePicture = fs.readFileSync(path);
     return profilePicture;
   }
 

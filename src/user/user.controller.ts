@@ -137,10 +137,7 @@ export class UserController {
             throw new NotFoundException('User not found');
         }
         const file = await this.userService.getProfilePicture((req.user as User).id);
-        return new StreamableFile(file, {
-            length: size,
-            type: type,
-        });
+        return new StreamableFile(file, { length: size, type: type });
     }
 
     @UseGuards(JwtAuthGuard)
