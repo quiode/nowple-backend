@@ -1,11 +1,12 @@
-import { Controller, Post, UseGuards, Req, InternalServerErrorException, Param, Body, Get, ParseUUIDPipe, Sse, MessageEvent, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, UseGuards, Req, InternalServerErrorException, Param, Body, Get, ParseUUIDPipe, Sse, MessageEvent, ParseIntPipe, ForbiddenException } from '@nestjs/common';
 import { IsDate, IsDateString, IsNotEmpty, IsString } from 'class-validator';
 import { Request } from 'express';
-import { Observable } from 'rxjs';
+import { interval, map, Observable } from 'rxjs';
 import { Message } from 'src/entities/message.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { User } from '../entities/user.entity';
 import { MessagesService } from './messages.service';
+import { AuthService } from '../auth/auth.service';
 
 export class MessageSendDto {
     @IsNotEmpty()
@@ -23,7 +24,7 @@ export interface MessageChatEvent extends MessageEvent {
 
 @Controller('messages')
 export class MessagesController {
-    constructor(private messagesService: MessagesService) { }
+    constructor(private messagesService: MessagesService, private authService: AuthService) { }
 
     /**
      * sends a message to a user
@@ -82,33 +83,28 @@ export class MessagesController {
     /**
      * gets the conversation with the user with the given id, returns the last 100 messages but as a server side event
      */
-    @UseGuards(JwtAuthGuard)
-    @Sse('conversation/stream/:id')
-    getConversationStream(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request): Observable<MessageEvent> {
-        if (!(req.user as User)) {
-            throw new InternalServerErrorException('User not found');
-        }
+    @Sse('conversation/stream/:id/:token')
+    async getConversationStream(@Param('id', ParseUUIDPipe) id: string, @Param('token') token: string, @Req() req: Request) {
+        const user = await this.authService.validateToken(token);
+        const cache = this.messagesService.getAmountStream(user.id, id, 100);
         req.on('close', () => {
-            this.messagesService.removeChat((req.user as User).id, id);
+            this.messagesService.removeChat(cache.id);
         });
-        // ! TODO: strip topic of sensitive data
-        const stream = this.messagesService.getAmountStream((req.user as User).id, id, 100);
-        return;
+        return cache.subject.asObservable().pipe(
+            map((event: MessageEvent) => {
+                const modifiedData = (event.data as Message[]).map((message: Message) => {
+                    // remove everything form receiver and sender except uuid and username
+                    const { receiver, sender, ...strippedMessage } = message;
+                    return { ...strippedMessage, receiver: { username: receiver.username, id: receiver.id }, sender: { username: sender.username, id: sender.id } };
+                });
+                return { ...event, data: modifiedData };
+            })
+        );
     }
 
-    /**
- * gets the conversation with the user with the given id, returns the last 100 messages but as a server side event
- */
-    @UseGuards(JwtAuthGuard)
-    @Sse('conversation/stream/:id/:amount')
-    getConversationStreamAmount(@Param('id', ParseUUIDPipe) id: string, @Param('amount', ParseIntPipe) amount: number, @Req() req: Request): Observable<MessageEvent> {
-        if (!(req.user as User)) {
-            throw new InternalServerErrorException('User not found');
-        }
-        req.on('close', () => {
-            this.messagesService.removeChat((req.user as User).id, id);
-        });
-        // ! TODO: strip topic of sensitive data
-        return this.messagesService.getAmountStream((req.user as User).id, id, amount);
-    }
+    // @Sse('test')
+    // async test() {
+    //     return interval(1000).pipe(map((_) =>
+    //         ({ data: { hello: 'world' } })));
+    // }
 }

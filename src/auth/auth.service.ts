@@ -5,6 +5,10 @@ import { JwtService } from '@nestjs/jwt';
 import { SharedService } from '../shared/shared.service';
 import * as bcrypt from 'bcrypt';
 
+interface jwtPayload {
+    username: string;
+    sub: string;
+}
 @Injectable()
 export class AuthService {
     constructor(private userService: UserService, private jwtService: JwtService, private sharedService: SharedService) {
@@ -24,7 +28,19 @@ export class AuthService {
      * creates a valid JWT and returns it
      */
     async login(user: User): Promise<string> {
-        const payload = { username: user.username, sub: user.id };
+        const payload: jwtPayload = { username: user.username, sub: user.id };
         return this.jwtService.sign(payload);
+    }
+
+    async validateToken(token: string): Promise<User> {
+        let payload: jwtPayload = { username: '', sub: '' };
+        try {
+            payload = this.jwtService.verify<jwtPayload>(token);
+        } catch (e) {
+            throw new ForbiddenException('Invalid token');
+        }
+        const user = await this.userService.findOneByUUID(payload.sub);
+        if (user == undefined) throw new NotFoundException('User not found');
+        return user;
     }
 }

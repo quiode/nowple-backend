@@ -5,11 +5,13 @@ import { In, MoreThan, Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { topics } from './topics';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, interval } from 'rxjs';
 import { MessageEntitySubscriberService } from './message.entity.subscriber.service';
 import { MessageChatEvent } from './messages.controller';
+import { randomUUID } from 'crypto';
 
 export interface MessageStreamCache {
+    id: string;
     receiver: string;
     sender: string;
     messages: Message[];
@@ -21,6 +23,15 @@ export interface MessageStreamCache {
 export class MessagesService {
     messageStreamCache: MessageStreamCache[] = [];
     constructor(@InjectRepository(User) private userRepository: Repository<User>, @InjectRepository(Message) private messageRepository: Repository<Message>, private messageEntitySubscriberService: MessageEntitySubscriberService) {
+        // to not auto-disconnect
+        interval(10000).subscribe(() => {
+            this.messageStreamCache.forEach(cache => {
+                cache.subject.next({
+                    data: [],
+                })
+            });
+        });
+
         this.messageEntitySubscriberService.getMessageChangeEvent().subscribe(async (event) => {
             this.messageStreamCache.forEach(async (cache) => {
                 const newMessages = await this.checkForNewMessages(cache);
@@ -57,7 +68,7 @@ export class MessagesService {
         if (!this.userRepository.findOne({ id: senderID })) throw new BadRequestException('Sender not found');
         if (!this.userRepository.findOne({ id: receiverID })) throw new BadRequestException('Receiver not found');
 
-        const messages = await this.messageRepository.find({ where: { receiver: { id: In([receiverID, senderID]) }, sender: { id: In([receiverID, senderID]) } }, relations: ['sender', 'receiver'], order: { time: 'ASC' }, skip: start, take: end });
+        const messages = await this.messageRepository.find({ where: { receiver: { id: In([receiverID, senderID]) }, sender: { id: In([receiverID, senderID]) } }, relations: ['sender', 'receiver'], order: { time: 'DESC' }, skip: start, take: end });
         return messages;
     }
 
@@ -81,8 +92,9 @@ export class MessagesService {
         return message;
     }
 
-    getAmountStream(senderID: string, receiverID: string, amount: number): Observable<MessageChatEvent> {
+    getAmountStream(senderID: string, receiverID: string, amount: number): MessageStreamCache {
         const cache: MessageStreamCache = {
+            id: randomUUID(),
             receiver: receiverID,
             sender: senderID,
             messages: [],
@@ -99,7 +111,7 @@ export class MessagesService {
             });
         });
 
-        return cache.subject.asObservable();
+        return cache;
     }
 
     /**
@@ -145,15 +157,15 @@ export class MessagesService {
     /**
      * Returns the index of the first element in the array, and -1 otherwise
      */
-    findChat(senderID: string, receiverID: string, cache: MessageStreamCache[]): number {
-        return cache.findIndex(cache => cache.sender === senderID && cache.receiver === receiverID);
+    findChat(uuid: string, cache: MessageStreamCache[]): number {
+        return cache.findIndex(cache => cache.id === uuid);
     }
 
     /**
      * remove the chat from the cache
      */
-    removeChat(senderID: string, receiverID: string): void {
-        const index = this.findChat(senderID, receiverID, this.messageStreamCache);
+    removeChat(uuid: string): void {
+        const index = this.findChat(uuid, this.messageStreamCache);
         if (index !== -1) {
             this.messageStreamCache.splice(index, 1);
         }

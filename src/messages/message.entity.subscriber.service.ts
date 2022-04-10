@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { InjectConnection, InjectRepository } from '@nestjs/typeorm';
 import { Subject } from 'rxjs';
 import { Message } from 'src/entities/message.entity';
-import { EventSubscriber, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent, TransactionCommitEvent } from 'typeorm';
+import { EventSubscriber, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent, TransactionCommitEvent, Connection, Repository } from 'typeorm';
 import { RecoverEvent } from 'typeorm/subscriber/event/RecoverEvent';
 import { SoftRemoveEvent } from 'typeorm/subscriber/event/SoftRemoveEvent';
 
@@ -11,13 +12,14 @@ export interface eventType {
 }
 
 @Injectable()
-@EventSubscriber()
-export class MessageEntitySubscriberService implements EntitySubscriberInterface {
+export class MessageEntitySubscriberService implements EntitySubscriberInterface<Message> {
     private readonly messageChangeEvent = new Subject<eventType>();
-    constructor() { }
+    constructor(@InjectConnection() readonly connection: Connection) {
+        connection.subscribers.push(this);
+    }
 
     /**
- * Indicates that this subscriber only listen to Post events.
+ * Indicates that this subscriber only listen to Message events.
  */
     listenTo() {
         return Message
