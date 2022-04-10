@@ -1,11 +1,10 @@
-import { Controller, Get, Req, UseGuards, InternalServerErrorException, Param, BadRequestException, Patch, Body, Post, ParseUUIDPipe, UseInterceptors, UploadedFile, StreamableFile, Options, Res, NotFoundException } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Controller, Get, Req, UseGuards, InternalServerErrorException, Param, BadRequestException, Patch, Body, Post, ParseUUIDPipe, UseInterceptors, UploadedFile, StreamableFile, NotFoundException } from '@nestjs/common';
+import { Request } from 'express';
 import { User } from 'src/entities/user.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserService, Chat } from './user.service';
 import { IsOptional, IsString } from 'class-validator';
 import { FileInterceptor } from '@nestjs/platform-express';
-import fs from 'fs';
 
 export class UserDto {
     @IsOptional()
@@ -103,27 +102,6 @@ export class UserController {
         }
         return this.userService.saveProfilePicture((req.user as User).id, file);
     }
-
-    // @UseGuards(JwtAuthGuard)
-    // @Options('profilePicture')
-    // async getProfilePictureOptions(@Req() req: Request, @Res() res: Response): Promise<void> {
-    //     if (!(req.user as User)) {
-    //         throw new InternalServerErrorException('User not found');
-    //     }
-
-    //     const size = await this.userService.getProfilePictureSize((req.user as User).id);
-    //     if (!size) {
-    //         throw new InternalServerErrorException('User not found');
-    //     }
-    //     const type = await this.userService.getProfilePictureType((req.user as User).id);
-    //     if (!type) {
-    //         throw new InternalServerErrorException('User not found');
-    //     }
-
-    //     res.setHeader('Content-Type', type);
-    //     res.setHeader('Content-Length', size.toString());
-    //     res.setHeader('Allow', 'GET, POST, OPTIONS');
-    // }
 
     @UseGuards(JwtAuthGuard)
     @Get('profilePicture')
