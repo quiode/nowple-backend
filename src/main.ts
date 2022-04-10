@@ -15,6 +15,9 @@ async function bootstrap() {
   const spdyOpts: ServerOptions = {
     key: fs.readFileSync('./test.key'),
     cert: fs.readFileSync('./test.crt'),
+    spdy: {
+      protocols: ['h2', 'http/1.1', 'http/1.0'],
+    },
   };
 
   const server: Server = spdy.createServer(spdyOpts, expressApp);

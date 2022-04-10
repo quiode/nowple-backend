@@ -9,6 +9,7 @@ import { SharedService } from '../shared/shared.service';
 import { Message } from '../entities/message.entity';
 import * as fs from 'fs';
 import { extname } from 'path';
+import * as mime from 'mime-types';
 
 export interface Chat { user: User, lastMessage?: Message }
 
@@ -222,19 +223,56 @@ export class UserService {
     return;
   }
 
-  async getProfilePicture(userID: string): Promise<fs.ReadStream> {
-    const user = await this.userRepository.findOne({ id: userID });
+  async getProfilePicture(userID: string) {
+    const user = await this.profilePictureChecker(userID);
 
-    if (user === undefined) throw new BadRequestException('User not found');
+    const path = process.cwd() + '/assets/profilePictures/' + user.profilePicture;
 
-    if (!user.profilePicture) throw new NotFoundException('Profile picture not found');
-
-    const file = fs.createReadStream(process.cwd() + '/assets/profilePictures/' + user.profilePicture);
+    const file = fs.createReadStream(path);
 
     return file;
   }
 
-  async getPublicProfilePicture(userID: string, profileID: string): Promise<fs.ReadStream> {
+  async getPublicProfilePicture(userID: string, profileID: string) {
+    const profile = await this.publicProfilePictureChecker(userID, profileID);
+
+    // get files
+    const path = process.cwd() + '/assets/profilePictures/' + profile.profilePicture;
+    const profilePicture = fs.createReadStream(path);
+    return profilePicture;
+  }
+
+  async getProfilePictureSize(userID: string) {
+    const user = await this.profilePictureChecker(userID);
+
+    const file = fs.statSync(process.cwd() + '/assets/profilePictures/' + user.profilePicture);
+
+    return file.size;
+  }
+
+  async getProfilePictureType(userID: string) {
+    const user = await this.profilePictureChecker(userID);
+
+    return mime.lookup(user.profilePicture) || 'application/octet-stream';
+  }
+
+  async getPublicProfilePictureSize(userID: string, profileID: string) {
+    const profile = await this.publicProfilePictureChecker(userID, profileID);
+
+    // get files
+    const profilePicture = fs.statSync(process.cwd() + '/assets/profilePictures/' + profile.profilePicture);
+
+    return profilePicture.size;
+  }
+
+  async getPublicProfilePictureType(userID: string, profileID: string) {
+    const profile = await this.publicProfilePictureChecker(userID, profileID);
+
+    return mime.lookup(profile.profilePicture) || 'application/octet-stream';
+  }
+
+
+  async publicProfilePictureChecker(userID: string, profileID: string): Promise<User> {
     const user = await this.userRepository.findOne({ id: userID }, { relations: ['contacts', 'matches', 'blocksOrDeclined'] });
     const profile = await this.userRepository.findOne({ id: profileID }, { relations: ['contacts', 'matches', 'blocksOrDeclined'] });
 
@@ -249,8 +287,16 @@ export class UserService {
     // check if profile picture exists
     if (!profile.profilePicture) throw new NotFoundException('Profile picture not found');
 
-    // get files
-    const profilePicture = fs.createReadStream(process.cwd() + '/assets/profilePictures/' + profile.profilePicture);
-    return profilePicture;
+    return profile;
+  }
+
+  async profilePictureChecker(userID: string): Promise<User> {
+    const user = await this.userRepository.findOne({ id: userID });
+
+    if (user === undefined) throw new BadRequestException('User not found');
+
+    if (!user.profilePicture) throw new NotFoundException('Profile picture not found');
+
+    return user;
   }
 }

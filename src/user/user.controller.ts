@@ -1,5 +1,5 @@
-import { Controller, Get, Req, UseGuards, InternalServerErrorException, Param, BadRequestException, Patch, Body, Post, ParseUUIDPipe, UseInterceptors, UploadedFile, StreamableFile } from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Get, Req, UseGuards, InternalServerErrorException, Param, BadRequestException, Patch, Body, Post, ParseUUIDPipe, UseInterceptors, UploadedFile, StreamableFile, Options, Res, NotFoundException } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { User } from 'src/entities/user.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserService, Chat } from './user.service';
@@ -104,21 +104,57 @@ export class UserController {
         return this.userService.saveProfilePicture((req.user as User).id, file);
     }
 
+    // @UseGuards(JwtAuthGuard)
+    // @Options('profilePicture')
+    // async getProfilePictureOptions(@Req() req: Request, @Res() res: Response): Promise<void> {
+    //     if (!(req.user as User)) {
+    //         throw new InternalServerErrorException('User not found');
+    //     }
+
+    //     const size = await this.userService.getProfilePictureSize((req.user as User).id);
+    //     if (!size) {
+    //         throw new InternalServerErrorException('User not found');
+    //     }
+    //     const type = await this.userService.getProfilePictureType((req.user as User).id);
+    //     if (!type) {
+    //         throw new InternalServerErrorException('User not found');
+    //     }
+
+    //     res.setHeader('Content-Type', type);
+    //     res.setHeader('Content-Length', size.toString());
+    //     res.setHeader('Allow', 'GET, POST, OPTIONS');
+    // }
+
     @UseGuards(JwtAuthGuard)
     @Get('profilePicture')
-    async getProfilePicture(@Req() req: Request): Promise<StreamableFile> {
+    async getProfilePicture(@Req() req: Request) {
         if (!(req.user as User)) {
             throw new InternalServerErrorException('User not found');
         }
-        return new StreamableFile(await this.userService.getProfilePicture((req.user as User).id));
+        const size = await this.userService.getProfilePictureSize((req.user as User).id);
+        const type = await this.userService.getProfilePictureType((req.user as User).id);
+        if (!size || !type) {
+            throw new NotFoundException('User not found');
+        }
+        const file = await this.userService.getProfilePicture((req.user as User).id);
+        return new StreamableFile(file, {
+            length: size,
+            type: type,
+        });
     }
 
     @UseGuards(JwtAuthGuard)
     @Get('profilePicture/:id')
-    async getPublicProfilePicture(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<StreamableFile> {
+    async getPublicProfilePicture(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string) {
         if (!(req.user as User)) {
             throw new InternalServerErrorException('User not found');
         }
-        return new StreamableFile(await this.userService.getPublicProfilePicture((req.user as User).id, id));
+        const size = await this.userService.getPublicProfilePictureSize((req.user as User).id, id);
+        const type = await this.userService.getPublicProfilePictureType((req.user as User).id, id);
+        if (!size || !type) {
+            throw new NotFoundException('User not found');
+        }
+        const file = await this.userService.getPublicProfilePicture((req.user as User).id, id);
+        return new StreamableFile(file, { length: size, type: type });
     }
 }
