@@ -71,3 +71,11 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](LICENSE).
+
+## Dev Notes
+
+# SSH Key
+
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes -sha256 -keyout test.key -out test.crt
+```

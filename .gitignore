@@ -37,3 +37,7 @@ lerna-debug.log*
 # assets
 uploads
 assets/profilePictures
+
+# dev ssh keys
+test.crt
+test.key
