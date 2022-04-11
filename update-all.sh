@@ -1,5 +1,5 @@
 #!/bin/bash
-cd ../Nowple/ || exit
+cd ../nowple-website/ || exit
 sudo rm -r dist
 git pull
 ng build
