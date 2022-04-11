@@ -26,8 +26,6 @@ export class SettingsController {
       throw new InternalServerErrorException('User not found');
     }
 
-    if (req.body == null) throw new BadRequestException('Body is empty');
-
     return this.settingsService.updateSettings((req.user as User).id, body);
   }
 }
