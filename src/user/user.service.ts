@@ -1,4 +1,10 @@
-import { ConflictException, Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Interests } from 'src/entities/interests.entity';
 import { Settings } from 'src/entities/settings.entity';
@@ -11,11 +17,18 @@ import * as fs from 'fs';
 import { extname } from 'path';
 import * as mime from 'mime-types';
 
-export interface Chat { user: User, lastMessage?: Message }
+export interface Chat {
+  user: User;
+  lastMessage?: Message;
+}
 
 @Injectable()
 export class UserService {
-  constructor(@InjectRepository(User) private userRepository: Repository<User>, private sharedService: SharedService, @InjectRepository(Message) private messageRepository: Repository<Message>) { }
+  constructor(
+    @InjectRepository(User) private userRepository: Repository<User>,
+    private sharedService: SharedService,
+    @InjectRepository(Message) private messageRepository: Repository<Message>
+  ) {}
 
   /**
    * Finds a user by its username, shorthand for {@link findOneByUsername}
@@ -42,14 +55,15 @@ export class UserService {
    * returns true is the username exists
    */
   async usernameExists(username: string): Promise<boolean> {
-    return await this.userRepository.findOne({ username }) !== undefined;
+    return (await this.userRepository.findOne({ username })) !== undefined;
   }
 
   /**
    * creates a new user
    */
   async create(user: RegisterBody): Promise<User> {
-    if (await this.usernameExists(user.username)) throw new ConflictException('Username already exists');
+    if (await this.usernameExists(user.username))
+      throw new ConflictException('Username already exists');
 
     const newUser = new User();
     newUser.username = user.username;
@@ -72,10 +86,32 @@ export class UserService {
   }
 
   /**
-   * returns a user with all properties (settings, messages, contacts usw.)
+   * returns a user with all properties (settings, contacts usw.)
    */
   async getFullUser(user: User): Promise<User> {
-    const userToReturn = await this.userRepository.findOne({ id: user.id }, { relations: ['settings', 'interests', 'sentMessages', 'receivedMessages', 'matches', "blocksOrDeclined", "contacts"] });
+    const userToReturn = await this.userRepository.findOne(
+      { id: user.id },
+      { relations: ['settings', 'interests', 'matches', 'blocksOrDeclined', 'contacts'] }
+    );
+    // strip sensitive information from matches, contacts and blocksorDeclined
+    userToReturn.matches = userToReturn.matches.map((match) => {
+      return {
+        id: match.id,
+        username: match.username,
+      };
+    }) as User[];
+    userToReturn.contacts = userToReturn.contacts.map((contact) => {
+      return {
+        id: contact.id,
+        username: contact.username,
+      };
+    }) as User[];
+    userToReturn.blocksOrDeclined = userToReturn.blocksOrDeclined.map((block) => {
+      return {
+        id: block.id,
+        username: block.username,
+      };
+    }) as User[];
     return userToReturn;
   }
 
@@ -83,7 +119,10 @@ export class UserService {
    * returns the public profile of a random user (stripped of sensitive information)
    */
   async getPublicProfile(userID: string): Promise<User> {
-    const userToReturn = await this.userRepository.findOne({ id: userID }, { relations: ['interests'] });
+    const userToReturn = await this.userRepository.findOne(
+      { id: userID },
+      { relations: ['interests'] }
+    );
     return userToReturn;
   }
 
@@ -99,7 +138,10 @@ export class UserService {
   }
 
   async blockUser(userID: string, blockedUserID: string): Promise<User> {
-    const userToUpdate = await this.userRepository.findOne({ id: userID }, { relations: ['blocksOrDeclined', 'matches', 'contacts'] });
+    const userToUpdate = await this.userRepository.findOne(
+      { id: userID },
+      { relations: ['blocksOrDeclined', 'matches', 'contacts'] }
+    );
     if (userToUpdate === undefined) throw new BadRequestException('User not found');
 
     const blockedUser = await this.userRepository.findOne({ id: blockedUserID });
@@ -109,9 +151,11 @@ export class UserService {
     userToUpdate.blocksOrDeclined = [...userToUpdate.blocksOrDeclined, blockedUser];
 
     // remove from matches
-    userToUpdate.matches = userToUpdate.matches.filter(match => match.id !== blockedUser.id);
+    userToUpdate.matches = userToUpdate.matches.filter((match) => match.id !== blockedUser.id);
     // remove from contacts
-    userToUpdate.contacts = userToUpdate.contacts.filter(contact => contact.id !== blockedUser.id);
+    userToUpdate.contacts = userToUpdate.contacts.filter(
+      (contact) => contact.id !== blockedUser.id
+    );
 
     return this.userRepository.save(userToUpdate);
   }
@@ -120,29 +164,33 @@ export class UserService {
    * finds a new match without considering preferences or interests, only excluding blocked users
    */
   async findNewContact(userID: string): Promise<User> {
-    const user = await this.userRepository.findOne({ id: userID }, { relations: ['matches', 'contacts', 'blocksOrDeclined'] });
+    const user = await this.userRepository.findOne(
+      { id: userID },
+      { relations: ['matches', 'contacts', 'blocksOrDeclined'] }
+    );
     if (user === undefined) throw new BadRequestException('User not found');
 
     const contacts = await this.userRepository.find({
       where: {
-        id: Not(In([
-          user.id,
-          ...user.contacts.map(contact => contact.id),
-          ...user.matches.map(match => match.id),
-          ...user.blocksOrDeclined.map(block => block.id),
-        ])
-        )
+        id: Not(
+          In([
+            user.id,
+            ...user.contacts.map((contact) => contact.id),
+            ...user.matches.map((match) => match.id),
+            ...user.blocksOrDeclined.map((block) => block.id),
+          ])
+        ),
       },
-      relations: ['matches', 'contacts']
+      relations: ['matches', 'contacts'],
     });
 
-    const contact = contacts[Math.floor(Math.random() * contacts.length)]
+    const contact = contacts[Math.floor(Math.random() * contacts.length)];
     if (contact === undefined) throw new BadRequestException('No Contacts found');
     user.contacts = [...user.contacts, contact];
     contact.contacts = [...contact.contacts, user];
     await this.userRepository.save(user);
     await this.userRepository.save(contact);
-    this.sharedService.generateNewTopic(user.id, contact.id)
+    this.sharedService.generateNewTopic(user.id, contact.id);
 
     return contact;
   }
@@ -159,7 +207,10 @@ export class UserService {
    * finds all current open chats and returns the receiver and the last message
    */
   async getChats(id: string): Promise<Chat[]> {
-    const user = await this.userRepository.findOne({ id }, { relations: ['matches', 'contacts', 'blocksOrDeclined'] });
+    const user = await this.userRepository.findOne(
+      { id },
+      { relations: ['matches', 'contacts', 'blocksOrDeclined'] }
+    );
 
     if (user == undefined) throw new BadRequestException('User not found');
 
@@ -168,12 +219,20 @@ export class UserService {
     if (user.matches.length > 0 || user.contacts.length > 0) {
       tUsers = await this.userRepository.find({
         where: {
-          id: Raw(alias => `
-        ${alias} IN (${[...user.matches.map(match => "'" + match.id + "'"), user.contacts.map(contact => "'" + contact.id + "'")].join(', ')})
+          id: Raw(
+            (alias) => `
+        ${alias} IN (${[
+              ...user.matches.map((match) => "'" + match.id + "'"),
+              user.contacts.map((contact) => "'" + contact.id + "'"),
+            ].join(', ')})
         AND
-        ${alias} NOT IN (${[...user.blocksOrDeclined.map(block => "'" + block.id + "'"), "'" + user.id + "'"].join(', ')})
-        `)
-        }
+        ${alias} NOT IN (${[
+              ...user.blocksOrDeclined.map((block) => "'" + block.id + "'"),
+              "'" + user.id + "'",
+            ].join(', ')})
+        `
+          ),
+        },
       });
     }
     const users = tUsers;
@@ -189,16 +248,15 @@ export class UserService {
           receiver: Any([contact.id, user.id]),
         },
         order: {
-          time: "DESC"
+          time: 'DESC',
         },
         relations: ['sender', 'receiver'],
-        take: 1
-      }
-      );
+        take: 1,
+      });
 
       chats.push({
         user: contact,
-        lastMessage: lastMessage[0]
+        lastMessage: lastMessage[0],
       });
     }
 
@@ -261,7 +319,9 @@ export class UserService {
     const profile = await this.publicProfilePictureChecker(userID, profileID);
 
     // get files
-    const profilePicture = fs.statSync(process.cwd() + '/assets/profilePictures/' + profile.profilePicture);
+    const profilePicture = fs.statSync(
+      process.cwd() + '/assets/profilePictures/' + profile.profilePicture
+    );
 
     return profilePicture.size;
   }
@@ -272,18 +332,32 @@ export class UserService {
     return mime.lookup(profile.profilePicture) || 'application/octet-stream';
   }
 
-
   async publicProfilePictureChecker(userID: string, profileID: string): Promise<User> {
-    const user = await this.userRepository.findOne({ id: userID }, { relations: ['contacts', 'matches', 'blocksOrDeclined'] });
-    const profile = await this.userRepository.findOne({ id: profileID }, { relations: ['contacts', 'matches', 'blocksOrDeclined'] });
+    const user = await this.userRepository.findOne(
+      { id: userID },
+      { relations: ['contacts', 'matches', 'blocksOrDeclined'] }
+    );
+    const profile = await this.userRepository.findOne(
+      { id: profileID },
+      { relations: ['contacts', 'matches', 'blocksOrDeclined'] }
+    );
 
     // test if accounts exists
     if (user === undefined) throw new BadRequestException('User not found');
     if (profile === undefined) throw new BadRequestException('Profile not found');
 
     // test if user is blocked or not in contacts or matches
-    if (user.blocksOrDeclined && user.blocksOrDeclined.find(block => block.id === profile.id) !== undefined) throw new ForbiddenException('User is blocked');
-    if (!user.contacts || user.contacts.find(contact => contact.id === profile.id) === undefined && user.matches.find(match => match.id === profile.id) === undefined) throw new ForbiddenException('User is not in your contacts or matches');
+    if (
+      user.blocksOrDeclined &&
+      user.blocksOrDeclined.find((block) => block.id === profile.id) !== undefined
+    )
+      throw new ForbiddenException('User is blocked');
+    if (
+      !user.contacts ||
+      (user.contacts.find((contact) => contact.id === profile.id) === undefined &&
+        user.matches.find((match) => match.id === profile.id) === undefined)
+    )
+      throw new ForbiddenException('User is not in your contacts or matches');
 
     // check if profile picture exists
     if (!profile.profilePicture) throw new NotFoundException('Profile picture not found');
