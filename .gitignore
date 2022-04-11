@@ -45,3 +45,5 @@ test.key
 # SPAs
 client/*
 !client/.gitkeep
+
+ormconfig.json
