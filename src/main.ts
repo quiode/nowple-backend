@@ -9,7 +9,6 @@ import * as express from 'express';
 import { ExpressAdapter } from '@nestjs/platform-express';
 
 async function bootstrap() {
-
   const expressApp: Express = express();
 
   const spdyOpts: ServerOptions = {
@@ -34,6 +33,8 @@ async function bootstrap() {
       transform: true,
     })
   );
+
+  app.setGlobalPrefix('api');
 
   await app.init();
   await server.listen(3000);

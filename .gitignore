@@ -41,3 +41,6 @@ assets/profilePictures
 # dev ssh keys
 test.crt
 test.key
+
+# SPAs
+client/*

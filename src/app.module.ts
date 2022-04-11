@@ -8,6 +8,8 @@ import { InterestsModule } from './interests/interests.module';
 import { MessagesModule } from './messages/messages.module';
 import { SharedModule } from './shared/shared.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -19,8 +21,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     SharedModule,
     TypeOrmModule.forRoot(),
     AuthModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'client'),
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}
