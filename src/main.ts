@@ -37,6 +37,6 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   await app.init();
-  await server.listen(3000);
+  await server.listen(3001);
 }
 bootstrap();
