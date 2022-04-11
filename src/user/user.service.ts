@@ -16,6 +16,7 @@ import { Message } from '../entities/message.entity';
 import * as fs from 'fs';
 import { extname } from 'path';
 import * as mime from 'mime-types';
+import { UserDto } from './user.controller';
 
 export interface Chat {
   user: User;
@@ -80,7 +81,23 @@ export class UserService {
     newUser.interests.diplomatic = user.interests?.diplomatic ?? null;
     newUser.interests.economic = user.interests?.economic ?? null;
     newUser.interests.society = user.interests?.society ?? null;
-    newUser.interests.ideology = user.interests?.ideology ?? null;
+
+    if (
+      newUser.interests.civil &&
+      newUser.interests.diplomatic &&
+      newUser.interests.economic &&
+      newUser.interests.society &&
+      user.interests.ideology == null
+    ) {
+      newUser.interests.ideology = this.sharedService.generateIdeology(
+        newUser.interests.civil,
+        newUser.interests.diplomatic,
+        newUser.interests.economic,
+        newUser.interests.society
+      );
+    } else {
+      newUser.interests.ideology = user.interests?.ideology ?? null;
+    }
 
     return this.userRepository.save(newUser);
   }
@@ -126,7 +143,7 @@ export class UserService {
     return userToReturn;
   }
 
-  async updateUser(user: User, update: any): Promise<User> {
+  async updateUser(user: User, update: UserDto): Promise<User> {
     const userToUpdate = await this.userRepository.findOne({ id: user.id });
     if (userToUpdate === undefined) throw new BadRequestException('User not found');
 
