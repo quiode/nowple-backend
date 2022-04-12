@@ -35,7 +35,7 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 # assets
-uploads
+uploads/*
 assets/profilePictures
 
 # dev ssh keys
@@ -45,5 +45,3 @@ test.key
 # SPAs
 client/*
 !client/.gitkeep
-
-ormconfig.json
