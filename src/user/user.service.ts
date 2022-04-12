@@ -188,6 +188,8 @@ export class UserService {
     // remove from contacts
     blockedUser.contacts = blockedUser.contacts.filter((contact) => contact.id !== userToUpdate.id);
 
+    await this.userRepository.save(blockedUser);
+
     return this.userRepository.save(userToUpdate);
   }
 
