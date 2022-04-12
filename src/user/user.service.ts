@@ -161,8 +161,13 @@ export class UserService {
     );
     if (userToUpdate === undefined) throw new BadRequestException('User not found');
 
-    const blockedUser = await this.userRepository.findOne({ id: blockedUserID });
+    const blockedUser = await this.userRepository.findOne(
+      { id: blockedUserID },
+      { relations: ['blocksOrDeclined', 'matches', 'contacts'] }
+    );
     if (blockedUser === undefined) throw new BadRequestException('User to block not found');
+
+    // update user
 
     // add to block/decline list
     userToUpdate.blocksOrDeclined = [...userToUpdate.blocksOrDeclined, blockedUser];
@@ -173,6 +178,15 @@ export class UserService {
     userToUpdate.contacts = userToUpdate.contacts.filter(
       (contact) => contact.id !== blockedUser.id
     );
+
+    // update user to block
+    // add to block/decline list
+    blockedUser.blocksOrDeclined = [...blockedUser.blocksOrDeclined, userToUpdate];
+
+    // remove from matches
+    blockedUser.matches = blockedUser.matches.filter((match) => match.id !== userToUpdate.id);
+    // remove from contacts
+    blockedUser.contacts = blockedUser.contacts.filter((contact) => contact.id !== userToUpdate.id);
 
     return this.userRepository.save(userToUpdate);
   }
