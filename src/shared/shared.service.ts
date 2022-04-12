@@ -122,4 +122,20 @@ export class SharedService {
     }
     return ideology;
   }
+
+  async isBlocked(user1: string, user2: string): Promise<boolean> {
+    const fullUser1 = await this.userRepository.findOne(
+      { id: user1 },
+      { relations: ['blocksOrDeclined'] }
+    );
+    const fullUser2 = await this.userRepository.findOne(
+      { id: user2 },
+      { relations: ['blocksOrDeclined'] }
+    );
+    if (fullUser1 == undefined || fullUser2 == undefined) return false;
+    return (
+      fullUser1.blocksOrDeclined.some((user) => user.id === fullUser2.id) ||
+      fullUser2.blocksOrDeclined.some((user) => user.id === fullUser1.id)
+    );
+  }
 }

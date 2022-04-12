@@ -8,6 +8,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from '../shared/constants';
 import { JwtStrategy } from './jwt.strategy';
 import { SharedModule } from '../shared/shared.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from '../entities/user.entity';
 
 @Module({
   imports: [
@@ -17,10 +19,10 @@ import { SharedModule } from '../shared/shared.module';
       secret: jwtConstants.secret,
       signOptions: { expiresIn: '15m' },
     }),
-    SharedModule
+    SharedModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy],
   exports: [AuthService],
 })
-export class AuthModule { }
+export class AuthModule {}

@@ -21,6 +21,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserService, Chat } from './user.service';
 import { IsOptional, IsString } from 'class-validator';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { SharedService } from '../shared/shared.service';
 
 export class UserDto {
   @IsOptional()
@@ -32,7 +33,7 @@ export class UserDto {
 }
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService, private sharedService: SharedService) {}
 
   @UseGuards(JwtAuthGuard)
   @Get()
@@ -51,6 +52,11 @@ export class UserController {
     if (!(req.user as User)) {
       throw new InternalServerErrorException('User not found');
     }
+
+    if (await this.sharedService.isBlocked((req.user as User).id, id)) {
+      throw new BadRequestException('User is blocked');
+    }
+
     const publicProfile = await this.userService.getPublicProfile(id);
     if (!publicProfile) {
       throw new BadRequestException('User not found');
@@ -76,6 +82,11 @@ export class UserController {
     if (!(req.user as User)) {
       throw new InternalServerErrorException('User not found');
     }
+
+    if (await this.sharedService.isBlocked((req.user as User).id, id)) {
+      throw new BadRequestException('User is already blocked');
+    }
+
     const user = await this.userService.blockUser((req.user as User).id, id);
     const {
       password,
@@ -154,6 +165,11 @@ export class UserController {
     if (!(req.user as User)) {
       throw new InternalServerErrorException('User not found');
     }
+
+    if (await this.sharedService.isBlocked((req.user as User).id, id)) {
+      throw new BadRequestException('User is blocked');
+    }
+
     const size = await this.userService.getPublicProfilePictureSize((req.user as User).id, id);
     const type = await this.userService.getPublicProfilePictureType((req.user as User).id, id);
     if (!size || !type) {
