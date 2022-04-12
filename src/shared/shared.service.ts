@@ -100,15 +100,21 @@ export class SharedService {
    * finds a ideology based on input values
    */
   generateIdeology(civil: number, diplomatic: number, economic: number, society: number): Ideology {
+    // invert ideologies (bc i'm dumb)
+    const invertedCivil = 100 - civil;
+    const invertedDiplomatic = 100 - diplomatic;
+    const invertedEconomic = 100 - economic;
+    const invertedSociety = 100 - society;
+
     // find ideology that matches the input values closest
     let ideology: Ideology;
     let minDifference = Number.MAX_SAFE_INTEGER;
     for (const i of ideologies) {
       const difference =
-        Math.abs(i.stats.govt - civil) +
-        Math.abs(i.stats.dipl - diplomatic) +
-        Math.abs(i.stats.econ - economic) +
-        Math.abs(i.stats.scty - society);
+        Math.abs(i.stats.govt - invertedCivil) +
+        Math.abs(i.stats.dipl - invertedDiplomatic) +
+        Math.abs(i.stats.econ - invertedEconomic) +
+        Math.abs(i.stats.scty - invertedSociety);
       if (difference < minDifference) {
         minDifference = difference;
         ideology = i.name as Ideology;
