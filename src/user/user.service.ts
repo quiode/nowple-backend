@@ -195,14 +195,17 @@ export class UserService {
   }
 
   /**
-   * finds a new match without considering preferences or interests, only excluding blocked users
+   * returns a new contact based on the user's preferences
    */
-  async findNewContact(userID: string): Promise<User> {
+  async findNewContactPrecise(userID: string): Promise<User> {
+    // TODO: fully implement
     const user = await this.userRepository.findOne(
       { id: userID },
-      { relations: ['matches', 'contacts', 'blocksOrDeclined'] }
+      { relations: ['matches', 'contacts', 'blocksOrDeclined', 'settings', 'interests'] }
     );
     if (user === undefined) throw new BadRequestException('User not found');
+    if (user.settings.discoverable === false)
+      throw new BadRequestException('User is not discoverable');
 
     const contacts = await this.userRepository.find({
       where: {
@@ -214,8 +217,11 @@ export class UserService {
             ...user.blocksOrDeclined.map((block) => block.id),
           ])
         ),
+        settings: {
+          discoverable: true,
+        },
       },
-      relations: ['matches', 'contacts'],
+      relations: ['matches', 'contacts', 'blocksOrDeclined', 'settings', 'interests'],
     });
 
     const contact = contacts[Math.floor(Math.random() * contacts.length)];
@@ -227,14 +233,6 @@ export class UserService {
     this.sharedService.generateNewTopic(user.id, contact.id);
 
     return contact;
-  }
-
-  /**
-   * returns a new contact based on the user's preferences
-   */
-  async findNewContactPrecise(userID: string): Promise<User> {
-    // TODO: implement
-    return this.findNewContact(userID);
   }
 
   /**
