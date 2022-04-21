@@ -1,13 +1,22 @@
-import { Controller, Get, UseGuards, InternalServerErrorException, Patch, Body, Req, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  InternalServerErrorException,
+  Patch,
+  Body,
+  Req,
+  BadRequestException,
+} from '@nestjs/common';
 import { Settings } from 'src/entities/settings.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SettingsService } from './settings.service';
 import { User } from '../entities/user.entity';
 import { Request } from 'express';
-import { SettingsBody } from '../auth/auth.controller';
+import { SettingsBody } from '../entities/settings.entity';
 @Controller('settings')
 export class SettingsController {
-  constructor(private settingsService: SettingsService) { }
+  constructor(private settingsService: SettingsService) {}
 
   @UseGuards(JwtAuthGuard)
   @Get()

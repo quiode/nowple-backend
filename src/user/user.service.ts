@@ -10,13 +10,13 @@ import { Interests } from 'src/entities/interests.entity';
 import { Settings } from 'src/entities/settings.entity';
 import { User } from 'src/entities/user.entity';
 import { Any, In, Not, Raw, Repository } from 'typeorm';
-import { RegisterBody } from '../auth/auth.controller';
 import { SharedService } from '../shared/shared.service';
 import { Message } from '../entities/message.entity';
 import * as fs from 'fs';
 import { extname } from 'path';
 import * as mime from 'mime-types';
 import { UserDto } from './user.controller';
+import { RegisterBody } from '../entities/user.entity';
 
 export interface Chat {
   user: User;
@@ -75,6 +75,7 @@ export class UserService {
 
     newUser.settings = new Settings();
     newUser.settings.isDarkMode = user.settings?.isDarkMode ?? false;
+    newUser.settings.discoverable = user.settings?.discoverable ?? false;
 
     newUser.interests = new Interests();
     newUser.interests.civil = user.interests?.civil ?? null;

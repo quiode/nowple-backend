@@ -1,10 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Interests } from '../entities/interests.entity';
-import { InterestsBody } from '../auth/auth.controller';
+import { Interests, InterestsBody } from '../entities/interests.entity';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Ideology, ideologies } from '../shared/ideologies';
 import { SharedService } from '../shared/shared.service';
 
 @Injectable()

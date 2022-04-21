@@ -1,7 +1,17 @@
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { Settings } from './settings.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Settings, SettingsBody } from './settings.entity';
 import { Message } from './message.entity';
-import { Interests } from './interests.entity';
+import { Interests, InterestsBody } from './interests.entity';
+import { IsNotEmpty, IsString, IsOptional, IsObject } from 'class-validator';
 
 @Entity()
 export class User {
@@ -42,4 +52,25 @@ export class User {
 
   @Column({ nullable: true })
   profilePicture: string;
+}
+
+export class RegisterBody {
+  @IsNotEmpty()
+  @IsString()
+  username: string;
+  @IsNotEmpty()
+  @IsString()
+  password: string;
+
+  @IsOptional()
+  @IsObject()
+  settings?: SettingsBody;
+
+  @IsOptional()
+  @IsObject()
+  interests?: InterestsBody;
+
+  @IsOptional()
+  @IsString()
+  profilePicture?: string;
 }
