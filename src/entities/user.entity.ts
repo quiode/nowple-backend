@@ -11,7 +11,8 @@ import {
 import { Settings, SettingsBody } from './settings.entity';
 import { Message } from './message.entity';
 import { Interests, InterestsBody } from './interests.entity';
-import { IsNotEmpty, IsString, IsOptional, IsObject } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsObject, IsEnum } from 'class-validator';
+import { Gender } from '../shared/genders';
 
 @Entity()
 export class User {
@@ -52,6 +53,9 @@ export class User {
 
   @Column({ nullable: true })
   profilePicture: string;
+
+  @Column({ nullable: true, enum: Gender })
+  gender: Gender;
 }
 
 export class RegisterBody {
@@ -73,4 +77,8 @@ export class RegisterBody {
   @IsOptional()
   @IsString()
   profilePicture?: string;
+
+  @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender;
 }

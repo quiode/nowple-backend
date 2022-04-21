@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Interests } from 'src/entities/interests.entity';
 import { Settings } from 'src/entities/settings.entity';
 import { User } from 'src/entities/user.entity';
-import { Any, In, Not, Raw, Repository } from 'typeorm';
+import { Any, Between, In, Like, Not, Raw, Repository } from 'typeorm';
 import { SharedService } from '../shared/shared.service';
 import { Message } from '../entities/message.entity';
 import * as fs from 'fs';
@@ -17,6 +17,7 @@ import { extname } from 'path';
 import * as mime from 'mime-types';
 import { UserDto } from './user.controller';
 import { RegisterBody } from '../entities/user.entity';
+import { ArrayContains } from 'class-validator';
 
 export interface Chat {
   user: User;
@@ -69,6 +70,7 @@ export class UserService {
     const newUser = new User();
     newUser.username = user.username;
     newUser.password = this.sharedService.hashPasswordSync(user.password);
+    newUser.gender = user.gender ?? null;
     newUser.matches = [];
     newUser.sentMessages = [];
     newUser.receivedMessages = [];
@@ -76,6 +78,10 @@ export class UserService {
     newUser.settings = new Settings();
     newUser.settings.isDarkMode = user.settings?.isDarkMode ?? false;
     newUser.settings.discoverable = user.settings?.discoverable ?? false;
+    newUser.settings.considerPolitics = user.settings?.considerPolitics ?? true;
+    newUser.settings.considerGender = user.settings?.considerGender ?? true;
+    newUser.settings.reversedPoliticalView = user.settings?.reversedPoliticalView ?? false;
+    newUser.settings.preferredGender = user.settings?.preferredGender ?? [];
 
     newUser.interests = new Interests();
     newUser.interests.civil = user.interests?.civil ?? null;
@@ -207,6 +213,8 @@ export class UserService {
     if (user.settings.discoverable === false)
       throw new BadRequestException('User is not discoverable');
 
+    const searchSensitivity = 10;
+
     const contacts = await this.userRepository.find({
       where: {
         id: Not(
@@ -219,6 +227,62 @@ export class UserService {
         ),
         settings: {
           discoverable: true,
+          preferredGender: ArrayContains([user.gender]),
+        },
+        gender: user.settings.considerGender ? In([user.settings.preferredGender]) : Like('%'),
+        interests: {
+          civil: user.settings.considerPolitics
+            ? user.settings.reversedPoliticalView
+              ? Not(
+                  Between(
+                    user.interests.civil - searchSensitivity,
+                    user.interests.civil + searchSensitivity
+                  )
+                )
+              : Between(
+                  user.interests.civil - searchSensitivity,
+                  user.interests.civil + searchSensitivity
+                )
+            : Like('%'),
+          diplomatic: user.settings.considerPolitics
+            ? user.settings.reversedPoliticalView
+              ? Not(
+                  Between(
+                    user.interests.diplomatic - searchSensitivity,
+                    user.interests.diplomatic + searchSensitivity
+                  )
+                )
+              : Between(
+                  user.interests.diplomatic - searchSensitivity,
+                  user.interests.diplomatic + searchSensitivity
+                )
+            : Like('%'),
+          economic: user.settings.considerPolitics
+            ? user.settings.reversedPoliticalView
+              ? Not(
+                  Between(
+                    user.interests.economic - searchSensitivity,
+                    user.interests.economic + searchSensitivity
+                  )
+                )
+              : Between(
+                  user.interests.economic - searchSensitivity,
+                  user.interests.economic + searchSensitivity
+                )
+            : Like('%'),
+          society: user.settings.considerPolitics
+            ? user.settings.reversedPoliticalView
+              ? Not(
+                  Between(
+                    user.interests.society - searchSensitivity,
+                    user.interests.society + searchSensitivity
+                  )
+                )
+              : Between(
+                  user.interests.society - searchSensitivity,
+                  user.interests.society + searchSensitivity
+                )
+            : Like('%'),
         },
       },
       relations: ['matches', 'contacts', 'blocksOrDeclined', 'settings', 'interests'],
