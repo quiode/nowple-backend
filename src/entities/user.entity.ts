@@ -67,6 +67,10 @@ export class RegisterBody {
   password: string;
 
   @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender;
+
+  @IsOptional()
   @IsObject()
   settings?: SettingsBody;
 
@@ -77,8 +81,4 @@ export class RegisterBody {
   @IsOptional()
   @IsString()
   profilePicture?: string;
-
-  @IsOptional()
-  @IsEnum(Gender)
-  gender?: Gender;
 }

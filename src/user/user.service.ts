@@ -154,9 +154,11 @@ export class UserService {
     const userToUpdate = await this.userRepository.findOne({ id: user.id });
     if (userToUpdate === undefined) throw new BadRequestException('User not found');
 
-    userToUpdate.username = update.username ?? userToUpdate.username;
     const passwordToHash = update.password ?? userToUpdate.password;
+
+    userToUpdate.username = update.username ?? userToUpdate.username;
     userToUpdate.password = this.sharedService.hashPasswordSync(passwordToHash);
+    userToUpdate.gender = update.gender ?? userToUpdate.gender;
 
     return this.userRepository.save(userToUpdate);
   }
@@ -227,63 +229,61 @@ export class UserService {
         ),
         settings: {
           discoverable: true,
-          preferredGender: ArrayContains([user.gender]),
+          considerGender: user.settings.considerGender,
+          considerPolitics: user.settings.considerPolitics,
+          preferredGender: user.settings.considerGender
+            ? Raw((alias) => `'${user.gender}' = ANY (${alias})`)
+            : Raw((_alias) => 'TRUE'),
         },
         gender: user.settings.considerGender ? In([user.settings.preferredGender]) : Like('%'),
-        interests: {
-          civil: user.settings.considerPolitics
-            ? user.settings.reversedPoliticalView
-              ? Not(
-                  Between(
+        interests: user.settings.considerPolitics
+          ? {
+              civil: user.settings.reversedPoliticalView
+                ? Not(
+                    Between(
+                      user.interests.civil - searchSensitivity,
+                      user.interests.civil + searchSensitivity
+                    )
+                  )
+                : Between(
                     user.interests.civil - searchSensitivity,
                     user.interests.civil + searchSensitivity
+                  ),
+              diplomatic: user.settings.reversedPoliticalView
+                ? Not(
+                    Between(
+                      user.interests.diplomatic - searchSensitivity,
+                      user.interests.diplomatic + searchSensitivity
+                    )
                   )
-                )
-              : Between(
-                  user.interests.civil - searchSensitivity,
-                  user.interests.civil + searchSensitivity
-                )
-            : Like('%'),
-          diplomatic: user.settings.considerPolitics
-            ? user.settings.reversedPoliticalView
-              ? Not(
-                  Between(
+                : Between(
                     user.interests.diplomatic - searchSensitivity,
                     user.interests.diplomatic + searchSensitivity
+                  ),
+              economic: user.settings.reversedPoliticalView
+                ? Not(
+                    Between(
+                      user.interests.economic - searchSensitivity,
+                      user.interests.economic + searchSensitivity
+                    )
                   )
-                )
-              : Between(
-                  user.interests.diplomatic - searchSensitivity,
-                  user.interests.diplomatic + searchSensitivity
-                )
-            : Like('%'),
-          economic: user.settings.considerPolitics
-            ? user.settings.reversedPoliticalView
-              ? Not(
-                  Between(
+                : Between(
                     user.interests.economic - searchSensitivity,
                     user.interests.economic + searchSensitivity
+                  ),
+              society: user.settings.reversedPoliticalView
+                ? Not(
+                    Between(
+                      user.interests.society - searchSensitivity,
+                      user.interests.society + searchSensitivity
+                    )
                   )
-                )
-              : Between(
-                  user.interests.economic - searchSensitivity,
-                  user.interests.economic + searchSensitivity
-                )
-            : Like('%'),
-          society: user.settings.considerPolitics
-            ? user.settings.reversedPoliticalView
-              ? Not(
-                  Between(
+                : Between(
                     user.interests.society - searchSensitivity,
                     user.interests.society + searchSensitivity
-                  )
-                )
-              : Between(
-                  user.interests.society - searchSensitivity,
-                  user.interests.society + searchSensitivity
-                )
-            : Like('%'),
-        },
+                  ),
+            }
+          : {},
       },
       relations: ['matches', 'contacts', 'blocksOrDeclined', 'settings', 'interests'],
     });

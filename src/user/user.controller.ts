@@ -19,17 +19,23 @@ import { Request } from 'express';
 import { User } from 'src/entities/user.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserService, Chat } from './user.service';
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsEnum } from 'class-validator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SharedService } from '../shared/shared.service';
+import { Gender } from '../shared/genders';
 
 export class UserDto {
   @IsOptional()
   @IsString()
   username?: string;
+
   @IsOptional()
   @IsString()
   password?: string;
+
+  @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender;
 }
 @Controller('user')
 export class UserController {

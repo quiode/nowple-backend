@@ -10,4 +10,5 @@ sudo systemctl stop nowple.service
 git pull
 sudo rm -r dist
 npm run build
+typeorm schema:sync
 sudo systemctl start nowple.service
