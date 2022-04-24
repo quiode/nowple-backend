@@ -233,9 +233,16 @@ export class UserService {
           considerPolitics: user.settings.considerPolitics,
           preferredGender: user.settings.considerGender
             ? Raw((alias) => `'${user.gender}' = ANY (${alias})`)
-            : Raw((_alias) => 'TRUE'),
+            : Raw((_alias) => 'true'),
         },
-        gender: user.settings.considerGender ? In([user.settings.preferredGender]) : Like('%'),
+        gender: user.settings.considerGender
+          ? Raw(
+              (alias) => `
+        ${alias} IN (${[...user.settings.preferredGender.map((gender) => "'" + gender + "'")].join(
+                ', '
+              )})`
+            )
+          : Like('%'),
         interests: user.settings.considerPolitics
           ? {
               civil: user.settings.reversedPoliticalView
