@@ -11,4 +11,5 @@ export enum Gender {
   non_binary = 'NON-BINARY',
   genderqueer = 'GENDERQUEER',
   gender_neutral = 'GENDER NEUTRAL',
+  other = 'OTHER',
 }
