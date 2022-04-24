@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { IsOptional, IsBoolean, IsEnum, IsArray } from 'class-validator';
+import { IsOptional, IsBoolean, IsEnum } from 'class-validator';
 import { Gender } from '../shared/genders';
 
 @Entity()
