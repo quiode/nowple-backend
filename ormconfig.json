@@ -5,6 +5,5 @@
   "username": "nowple",
   "password": "1234",
   "database": "nowple",
-  "entities": ["dist/**/*.entity{.ts,.js}"],
-  "logging": false
+  "entities": ["dist/**/*.entity{.ts,.js}"]
 }
