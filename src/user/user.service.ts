@@ -164,6 +164,8 @@ export class UserService {
   }
 
   async blockUser(userID: string, blockedUserID: string): Promise<User> {
+    if (userID == blockedUserID) throw new BadRequestException('You cannot block yourself');
+
     const userToUpdate = await this.userRepository.findOne(
       { id: userID },
       { relations: ['blocksOrDeclined', 'matches', 'contacts'] }
