@@ -231,6 +231,7 @@ export class UserService {
           discoverable: true,
           considerGender: user.settings.considerGender,
           considerPolitics: user.settings.considerPolitics,
+          reversedPoliticalView: user.settings.reversedPoliticalView,
           preferredGender: user.settings.considerGender
             ? Raw((alias) => `'${user.gender}' = ANY (${alias})`)
             : Raw((_alias) => 'true'),
