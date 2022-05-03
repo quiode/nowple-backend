@@ -30,7 +30,7 @@ export class UserService {
     @InjectRepository(User) private userRepository: Repository<User>,
     private sharedService: SharedService,
     @InjectRepository(Message) private messageRepository: Repository<Message>
-  ) {}
+  ) { }
 
   /**
    * Finds a user by its username, shorthand for {@link findOneByUsername}
@@ -240,59 +240,59 @@ export class UserService {
         },
         gender: user.settings.considerGender
           ? Raw(
-              (alias) => `
+            (alias) => `
         ${alias} IN (${[...user.settings.preferredGender.map((gender) => "'" + gender + "'")].join(
-                ', '
-              )})`
-            )
+              ', '
+            )})`
+          )
           : Like('%'),
         interests: user.settings.considerPolitics
           ? {
-              civil: user.settings.reversedPoliticalView
-                ? Not(
-                    Between(
-                      user.interests.civil - searchSensitivity,
-                      user.interests.civil + searchSensitivity
-                    )
-                  )
-                : Between(
-                    user.interests.civil - searchSensitivity,
-                    user.interests.civil + searchSensitivity
-                  ),
-              diplomatic: user.settings.reversedPoliticalView
-                ? Not(
-                    Between(
-                      user.interests.diplomatic - searchSensitivity,
-                      user.interests.diplomatic + searchSensitivity
-                    )
-                  )
-                : Between(
-                    user.interests.diplomatic - searchSensitivity,
-                    user.interests.diplomatic + searchSensitivity
-                  ),
-              economic: user.settings.reversedPoliticalView
-                ? Not(
-                    Between(
-                      user.interests.economic - searchSensitivity,
-                      user.interests.economic + searchSensitivity
-                    )
-                  )
-                : Between(
-                    user.interests.economic - searchSensitivity,
-                    user.interests.economic + searchSensitivity
-                  ),
-              society: user.settings.reversedPoliticalView
-                ? Not(
-                    Between(
-                      user.interests.society - searchSensitivity,
-                      user.interests.society + searchSensitivity
-                    )
-                  )
-                : Between(
-                    user.interests.society - searchSensitivity,
-                    user.interests.society + searchSensitivity
-                  ),
-            }
+            civil: user.settings.reversedPoliticalView
+              ? Not(
+                Between(
+                  user.interests.civil - searchSensitivity,
+                  user.interests.civil + searchSensitivity
+                )
+              )
+              : Between(
+                user.interests.civil - searchSensitivity,
+                user.interests.civil + searchSensitivity
+              ),
+            diplomatic: user.settings.reversedPoliticalView
+              ? Not(
+                Between(
+                  user.interests.diplomatic - searchSensitivity,
+                  user.interests.diplomatic + searchSensitivity
+                )
+              )
+              : Between(
+                user.interests.diplomatic - searchSensitivity,
+                user.interests.diplomatic + searchSensitivity
+              ),
+            economic: user.settings.reversedPoliticalView
+              ? Not(
+                Between(
+                  user.interests.economic - searchSensitivity,
+                  user.interests.economic + searchSensitivity
+                )
+              )
+              : Between(
+                user.interests.economic - searchSensitivity,
+                user.interests.economic + searchSensitivity
+              ),
+            society: user.settings.reversedPoliticalView
+              ? Not(
+                Between(
+                  user.interests.society - searchSensitivity,
+                  user.interests.society + searchSensitivity
+                )
+              )
+              : Between(
+                user.interests.society - searchSensitivity,
+                user.interests.society + searchSensitivity
+              ),
+          }
           : {},
       },
       relations: ['matches', 'contacts', 'blocksOrDeclined', 'settings', 'interests'],
@@ -328,14 +328,14 @@ export class UserService {
           id: Raw(
             (alias) => `
         ${alias} IN (${[
-              ...user.matches.map((match) => "'" + match.id + "'"),
-              user.contacts.map((contact) => "'" + contact.id + "'"),
-            ].join(', ')})
+                ...user.matches.map((match) => "'" + match.id + "'"),
+                user.contacts.map((contact) => "'" + contact.id + "'"),
+              ].join(', ')})
         AND
         ${alias} NOT IN (${[
-              ...user.blocksOrDeclined.map((block) => "'" + block.id + "'"),
-              "'" + user.id + "'",
-            ].join(', ')})
+                ...user.blocksOrDeclined.map((block) => "'" + block.id + "'"),
+                "'" + user.id + "'",
+              ].join(', ')})
         `
           ),
         },
@@ -479,5 +479,66 @@ export class UserService {
     if (!user.profilePicture) throw new NotFoundException('Profile picture not found');
 
     return user;
+  }
+
+  /**
+   * returns true if the two users can matchmake, else throws an error
+   */
+  async canMatchmake(userID: string, userID2: string): Promise<boolean> {
+    const user1 = await this.userRepository.findOne({ id: userID }, { relations: ['contacts', 'matches', 'blocksOrDeclined'] });
+    const user2 = await this.userRepository.findOne({ id: userID2 }, { relations: ['contacts', 'matches', 'blocksOrDeclined'] });
+
+    // test if accounts exists
+    if (user1 === undefined) throw new BadRequestException('User not found');
+    if (user2 === undefined) throw new BadRequestException('User not found');
+
+    // check that they are contacts, not matched and not blocked
+    if (user1.contacts.find((contact) => contact.id == user2.id) === undefined || user2.contacts.find((contact) => contact.id == user1.id) === undefined) {
+      throw new ForbiddenException('Users are not in your contacts');
+    }
+
+    if (user1.matches.find((match) => match.id == user2.id) !== undefined || user2.matches.find((match) => match.id == user1.id) !== undefined) {
+      throw new ForbiddenException('Users are already matched');
+    }
+
+    if (user1.blocksOrDeclined.find((block) => block.id == user2.id) !== undefined || user2.blocksOrDeclined.find((block) => block.id == user1.id) !== undefined) {
+      throw new ForbiddenException('Users are blocked');
+    }
+
+    // check if they have more than 10 messages
+    const messages = await this.messageRepository.find({
+      where: {
+        sender: Any([user1.id, user2.id]),
+        receiver: Any([user1.id, user2.id]),
+      },
+    });
+
+    if (messages.length < 10) {
+      throw new ForbiddenException('Users have less than 10 messages');
+    } else {
+      return true;
+    }
+  }
+
+  async matchmake(userID: string, userID2: string): Promise<void> {
+    if (!await this.canMatchmake(userID, userID2)) {
+      throw new ForbiddenException('Users cannot matchmake');
+    }
+    const user1 = await this.userRepository.findOne({ id: userID }, { relations: ['matches'] });
+    const user2 = await this.userRepository.findOne({ id: userID2 }, { relations: ['matches'] });
+
+    // test if accounts exists
+    if (user1 === undefined) throw new BadRequestException('User not found');
+    if (user2 === undefined) throw new BadRequestException('User not found');
+
+    // add user2 to user1's matches
+    user1.matches.push(user2);
+
+    // add user1 to user2's matches
+    user2.matches.push(user1);
+
+    // save changes
+    await this.userRepository.save(user1);
+    await this.userRepository.save(user2);
   }
 }

@@ -39,7 +39,7 @@ export class UserDto {
 }
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService, private sharedService: SharedService) {}
+  constructor(private readonly userService: UserService, private sharedService: SharedService) { }
 
   @UseGuards(JwtAuthGuard)
   @Get()
@@ -184,4 +184,16 @@ export class UserController {
     const file = await this.userService.getPublicProfilePicture((req.user as User).id, id);
     return new StreamableFile(file, { length: size, type: type });
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('canMatchmake/:id')
+  async canMatchmake(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string) {
+    if (!(req.user as User)) {
+      throw new InternalServerErrorException('User not found');
+    }
+
+    const canMatchmake = await this.userService.canMatchmake((req.user as User).id, id);
+    return canMatchmake;
+  }
+
 }
