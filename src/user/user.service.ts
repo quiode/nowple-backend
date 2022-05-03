@@ -17,12 +17,12 @@ import { extname } from 'path';
 import * as mime from 'mime-types';
 import { UserDto } from './user.controller';
 import { RegisterBody } from '../entities/user.entity';
-import { ArrayContains } from 'class-validator';
 
 export interface Chat {
   user: User;
   lastMessage?: Message;
   isMatch?: boolean;
+  isPending?: boolean;
 }
 
 @Injectable()
@@ -365,7 +365,8 @@ export class UserService {
       chats.push({
         user: contact,
         lastMessage: lastMessage[0],
-        isMatch: user.matches.find((match) => match.id === contact.id) !== undefined,
+        isMatch: user.matches.find((match) => match.id === contact.id) !== undefined && contact.matches.find((match) => match.id === user.id) !== undefined,
+        isPending: user.matches.find((match) => match.id === contact.id) === undefined && contact.matches.find((match) => match.id === user.id) !== undefined || user.matches.find((match) => match.id === contact.id) !== undefined && contact.matches.find((match) => match.id === user.id) === undefined,
       });
     }
 
@@ -488,6 +489,8 @@ export class UserService {
    * returns true if the two users can matchmake, else throws an error
    */
   async canMatchmake(userID: string, userID2: string): Promise<boolean> {
+    if (userID === userID2) throw new BadRequestException('Cannot matchmake with yourself');
+
     const user1 = await this.userRepository.findOne({ id: userID }, { relations: ['contacts', 'matches', 'blocksOrDeclined'] });
     const user2 = await this.userRepository.findOne({ id: userID2 }, { relations: ['contacts', 'matches', 'blocksOrDeclined'] });
 
@@ -500,7 +503,7 @@ export class UserService {
       throw new ForbiddenException('Users are not in your contacts');
     }
 
-    if (user1.matches.find((match) => match.id == user2.id) !== undefined || user2.matches.find((match) => match.id == user1.id) !== undefined) {
+    if (user1.matches.find((match) => match.id == user2.id)) {
       throw new ForbiddenException('Users are already matched');
     }
 
@@ -509,14 +512,14 @@ export class UserService {
     }
 
     // check if they have more than 10 messages
-    const messages = await this.messageRepository.find({
+    const messages = await this.messageRepository.count({
       where: {
         sender: Any([user1.id, user2.id]),
         receiver: Any([user1.id, user2.id]),
       },
     });
 
-    if (messages.length < 10) {
+    if (messages < 10) {
       throw new ForbiddenException('Users have less than 10 messages');
     } else {
       return true;
@@ -537,11 +540,11 @@ export class UserService {
     // add user2 to user1's matches
     user1.matches.push(user2);
 
-    // add user1 to user2's matches
-    user2.matches.push(user1);
+    // // add user1 to user2's matches
+    // user2.matches.push(user1);
 
     // save changes
     await this.userRepository.save(user1);
-    await this.userRepository.save(user2);
+    // await this.userRepository.save(user2);
   }
 }

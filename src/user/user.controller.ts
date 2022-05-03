@@ -23,6 +23,7 @@ import { IsOptional, IsString, IsEnum } from 'class-validator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SharedService } from '../shared/shared.service';
 import { Gender } from '../shared/genders';
+import { isProduction } from '../shared/constants';
 
 export class UserDto {
   @IsOptional()
@@ -130,7 +131,7 @@ export class UserController {
     // remove password and other sensitive data
     const strippedChats = chats.map((chat) => {
       const { password, ...user } = chat.user;
-      return { user, lastMessage: chat.lastMessage, isMatch: chat.isMatch };
+      return { user, lastMessage: chat.lastMessage, isMatch: chat.isMatch, isPending: chat.isPending };
     });
     return strippedChats;
   }
