@@ -22,6 +22,7 @@ import { ArrayContains } from 'class-validator';
 export interface Chat {
   user: User;
   lastMessage?: Message;
+  isMatch?: boolean;
 }
 
 @Injectable()
@@ -339,6 +340,7 @@ export class UserService {
         `
           ),
         },
+        relations: ['matches'],
       });
     }
     const users = tUsers;
@@ -363,6 +365,7 @@ export class UserService {
       chats.push({
         user: contact,
         lastMessage: lastMessage[0],
+        isMatch: user.matches.find((match) => match.id === contact.id) !== undefined,
       });
     }
 

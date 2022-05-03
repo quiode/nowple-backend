@@ -130,7 +130,7 @@ export class UserController {
     // remove password and other sensitive data
     const strippedChats = chats.map((chat) => {
       const { password, ...user } = chat.user;
-      return { user, lastMessage: chat.lastMessage };
+      return { user, lastMessage: chat.lastMessage, isMatch: chat.isMatch };
     });
     return strippedChats;
   }
