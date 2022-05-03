@@ -196,4 +196,14 @@ export class UserController {
     return canMatchmake;
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('matchmake/:id')
+  async matchmake(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string) {
+    if (!(req.user as User)) {
+      throw new InternalServerErrorException('User not found');
+    }
+
+    await this.userService.matchmake((req.user as User).id, id);
+    return true;
+  }
 }

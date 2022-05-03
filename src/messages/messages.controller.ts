@@ -42,7 +42,7 @@ export class MessagesController {
     private messagesService: MessagesService,
     private authService: AuthService,
     private sharedService: SharedService
-  ) {}
+  ) { }
 
   /**
    * sends a message to a user
