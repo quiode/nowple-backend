@@ -72,6 +72,7 @@ export class UserService {
     newUser.username = user.username;
     newUser.password = this.sharedService.hashPasswordSync(user.password);
     newUser.gender = user.gender ?? null;
+    newUser.location = user.location ?? null;
     newUser.matches = [];
     newUser.sentMessages = [];
     newUser.receivedMessages = [];
@@ -160,6 +161,7 @@ export class UserService {
     userToUpdate.username = update.username ?? userToUpdate.username;
     userToUpdate.password = this.sharedService.hashPasswordSync(passwordToHash);
     userToUpdate.gender = update.gender ?? userToUpdate.gender;
+    userToUpdate.location = update.location ?? userToUpdate.location;
 
     return this.userRepository.save(userToUpdate);
   }
@@ -209,7 +211,6 @@ export class UserService {
    * returns a new contact based on the user's preferences
    */
   async findNewContactPrecise(userID: string): Promise<User> {
-    // TODO: fully implement
     const user = await this.userRepository.findOne(
       { id: userID },
       { relations: ['matches', 'contacts', 'blocksOrDeclined', 'settings', 'interests'] }

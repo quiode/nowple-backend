@@ -13,6 +13,7 @@ import { Message } from './message.entity';
 import { Interests, InterestsBody } from './interests.entity';
 import { IsNotEmpty, IsString, IsOptional, IsObject, IsEnum } from 'class-validator';
 import { Gender } from '../shared/genders';
+import { Point } from 'geojson';
 
 @Entity()
 export class User {
@@ -56,6 +57,13 @@ export class User {
 
   @Column({ nullable: true, enum: Gender })
   gender: Gender;
+
+  @Column({
+    nullable: true, type: 'geography',
+    spatialFeatureType: 'Point',
+    srid: 4326,
+  })
+  location: Point
 }
 
 export class RegisterBody {
@@ -81,4 +89,8 @@ export class RegisterBody {
   @IsOptional()
   @IsString()
   profilePicture?: string;
+
+  @IsOptional()
+  @IsObject()
+  location?: Point
 }

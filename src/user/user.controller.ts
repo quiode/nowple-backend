@@ -19,11 +19,12 @@ import { Request } from 'express';
 import { User } from 'src/entities/user.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserService, Chat } from './user.service';
-import { IsOptional, IsString, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsObject } from 'class-validator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SharedService } from '../shared/shared.service';
 import { Gender } from '../shared/genders';
 import { isProduction } from '../shared/constants';
+import { Point } from 'geojson';
 
 export class UserDto {
   @IsOptional()
@@ -37,6 +38,10 @@ export class UserDto {
   @IsOptional()
   @IsEnum(Gender)
   gender?: Gender;
+
+  @IsOptional()
+  @IsObject()
+  location?: Point;
 }
 @Controller('user')
 export class UserController {
