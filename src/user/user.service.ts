@@ -84,6 +84,7 @@ export class UserService {
     newUser.settings.considerGender = user.settings?.considerGender ?? true;
     newUser.settings.reversedPoliticalView = user.settings?.reversedPoliticalView ?? false;
     newUser.settings.preferredGender = user.settings?.preferredGender ?? [];
+    newUser.settings.maxDistance = user.settings?.maxDistance ?? 0;
 
     newUser.interests = new Interests();
     newUser.interests.civil = user.interests?.civil ?? null;

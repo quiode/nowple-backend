@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { IsOptional, IsBoolean, IsEnum } from 'class-validator';
+import { IsOptional, IsBoolean, IsEnum, IsNumber } from 'class-validator';
 import { Gender } from '../shared/genders';
 
 @Entity()
@@ -24,6 +24,10 @@ export class Settings {
 
   @Column('enum', { array: true, enum: Gender, default: [] })
   preferredGender: Gender[];
+
+  // in km
+  @Column({ default: 10 })
+  maxDistance: number;
 }
 
 export class SettingsBody {
@@ -49,5 +53,9 @@ export class SettingsBody {
 
   @IsOptional()
   @IsEnum(Gender, { each: true })
-  preferredGender: Gender[];
+  preferredGender?: Gender[];
+
+  @IsOptional()
+  @IsNumber()
+  maxDistance?: number;
 }
