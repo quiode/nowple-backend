@@ -25,7 +25,7 @@ export class Settings {
   @Column('enum', { array: true, enum: Gender, default: [] })
   preferredGender: Gender[];
 
-  // in km
+  // in km, 0 = off
   @Column({ default: 10 })
   maxDistance: number;
 }
