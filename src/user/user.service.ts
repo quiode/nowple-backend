@@ -240,6 +240,15 @@ export class UserService {
           preferredGender: user.settings.considerGender
             ? Raw((alias) => `'${user.gender}' = ANY (${alias})`)
             : Raw((_alias) => 'true'),
+          maxDistance: Raw((alias) => `
+            CASE
+              WHEN ${alias} = 0 AND ${user.settings.maxDistance} = 0 THEN TRUE
+              WHEN ${alias} = 0 AND ${user.settings.maxDistance} != 0 THEN ST_DISTANCE("User"."location",'SRID=4326;POINT(${user.location.coordinates[0]} ${user.location.coordinates[1]})'::geometry) <= ${user.settings.maxDistance} * 1000
+              WHEN ${alias} != 0 AND ${user.settings.maxDistance} = 0 THEN ST_DISTANCE("User"."location",'SRID=4326;POINT(${user.location.coordinates[0]} ${user.location.coordinates[1]})'::geometry) <= ${alias} * 1000
+              WHEN ${alias} >= ${user.settings.maxDistance} AND ${alias} != 0 AND ${user.settings.maxDistance} != 0 THEN ST_DISTANCE("User"."location",'SRID=4326;POINT(${user.location.coordinates[0]} ${user.location.coordinates[1]})'::geometry) <= ${user.settings.maxDistance} * 1000
+              WHEN ${alias} < ${user.settings.maxDistance} AND ${alias} != 0 AND ${user.settings.maxDistance} != 0 THEN ST_DISTANCE("User"."location",'SRID=4326;POINT(${user.location.coordinates[0]} ${user.location.coordinates[1]})'::geometry) <= ${alias} * 1000
+            END
+          `)
         },
         gender: user.settings.considerGender
           ? Raw(
