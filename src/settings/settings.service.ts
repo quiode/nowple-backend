@@ -9,7 +9,7 @@ export class SettingsService {
   constructor(
     @InjectRepository(Settings) private settingsRepository: Repository<Settings>,
     @InjectRepository(User) private userRepository: Repository<User>
-  ) {}
+  ) { }
 
   async getSettings(userId: string): Promise<Settings> {
     const user = await this.userRepository.findOne({
@@ -47,6 +47,7 @@ export class SettingsService {
         : settings.reversedPoliticalView;
     settings.preferredGender =
       body.preferredGender != null ? body.preferredGender : settings.preferredGender;
+    settings.maxDistance = body.maxDistance != null ? body.maxDistance : settings.maxDistance;
 
     await this.settingsRepository.save(settings);
 
