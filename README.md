@@ -76,8 +76,16 @@ Nest is [MIT licensed](LICENSE).
 
 # SSH Key
 
+## Generate
+
 ```bash
-openssl req -x509 -newkey rsa:2048 -nodes -sha256 -keyout test.key -out test.crt
+$ openssl req -x509 -newkey rsa:2048 -nodes -sha256 -keyout test.key -out test.crt
+```
+
+## Trust System Wide
+
+```bash
+$ sudo trust anchor test.crt
 ```
 
 # Database Extensions
