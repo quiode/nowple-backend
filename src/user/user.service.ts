@@ -314,7 +314,7 @@ export class UserService {
                 ${alias} && ${[...user.interests.hobbies.map((hobby) => `'${hobby}'`)].join(', ')}
                 `
               )
-              : Like('%'),
+              : Raw((_alias) => 'TRUE'),
           }
           : {
             hobbies: user.settings.considerHobbies
@@ -323,7 +323,7 @@ export class UserService {
                 ${alias} && ${[...user.interests.hobbies.map((hobby) => `'${hobby}'`)].join(', ')}
                 `
               )
-              : Like('%'),
+              : Raw((_alias) => `TRUE`),
           },
       },
       relations: ['matches', 'contacts', 'blocksOrDeclined', 'settings', 'interests'],
