@@ -28,6 +28,9 @@ export class Settings {
   // in km, 0 = off
   @Column({ default: 10 })
   maxDistance: number;
+
+  @Column({ default: false })
+  considerHobbies: boolean;
 }
 
 export class SettingsBody {
@@ -58,4 +61,8 @@ export class SettingsBody {
   @IsOptional()
   @IsNumber()
   maxDistance?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  considerHobbies?: boolean;
 }

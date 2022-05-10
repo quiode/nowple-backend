@@ -11,7 +11,7 @@ export class InterestsService {
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(Interests) private interestsRepository: Repository<Interests>,
     private sharedService: SharedService
-  ) {}
+  ) { }
 
   /**
    * get Interests
@@ -42,6 +42,7 @@ export class InterestsService {
       interests.economic,
       interests.society
     );
+    interests.hobbies = body.hobbies ?? interests.hobbies;
 
     return this.interestsRepository.save(interests);
   }

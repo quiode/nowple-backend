@@ -48,6 +48,8 @@ export class SettingsService {
     settings.preferredGender =
       body.preferredGender != null ? body.preferredGender : settings.preferredGender;
     settings.maxDistance = body.maxDistance != null ? body.maxDistance : settings.maxDistance;
+    settings.considerHobbies =
+      body.considerHobbies != null ? body.considerHobbies : settings.considerHobbies;
 
     await this.settingsRepository.save(settings);
 

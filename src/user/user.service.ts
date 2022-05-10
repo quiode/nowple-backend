@@ -78,13 +78,14 @@ export class UserService {
     newUser.receivedMessages = [];
 
     newUser.settings = new Settings();
-    newUser.settings.isDarkMode = user.settings?.isDarkMode ?? false;
-    newUser.settings.discoverable = user.settings?.discoverable ?? false;
-    newUser.settings.considerPolitics = user.settings?.considerPolitics ?? true;
-    newUser.settings.considerGender = user.settings?.considerGender ?? true;
-    newUser.settings.reversedPoliticalView = user.settings?.reversedPoliticalView ?? false;
+    newUser.settings.isDarkMode = user.settings?.isDarkMode !== undefined ? user.settings.isDarkMode : false;
+    newUser.settings.discoverable = user.settings?.discoverable !== undefined ? user.settings.discoverable : false;
+    newUser.settings.considerPolitics = user.settings?.considerPolitics !== undefined ? user.settings.considerPolitics : true;
+    newUser.settings.considerGender = user.settings?.considerGender !== undefined ? user.settings.considerGender : true;
+    newUser.settings.reversedPoliticalView = user.settings?.reversedPoliticalView !== undefined ? user.settings.reversedPoliticalView : false;
     newUser.settings.preferredGender = user.settings?.preferredGender ?? [];
-    newUser.settings.maxDistance = user.settings?.maxDistance ?? 0;
+    newUser.settings.maxDistance = user.settings?.maxDistance !== undefined ? user.settings.maxDistance : 0;
+    newUser.settings.considerHobbies = user.settings?.considerHobbies !== undefined ? user.settings.considerHobbies : true;
 
     newUser.interests = new Interests();
     newUser.interests.civil = user.interests?.civil ?? null;
@@ -108,6 +109,8 @@ export class UserService {
     } else {
       newUser.interests.ideology = user.interests?.ideology ?? null;
     }
+
+    newUser.interests.hobbies = user.interests?.hobbies ?? null;
 
     return this.userRepository.save(newUser);
   }
@@ -154,7 +157,7 @@ export class UserService {
   }
 
   async updateUser(user: User, update: UserDto): Promise<User> {
-    const userToUpdate = await this.userRepository.findOne({ id: user.id });
+    const userToUpdate = await this.userRepository.findOne({ id: user.id }, { relations: ['settings', 'interests'] });
     if (userToUpdate === undefined) throw new BadRequestException('User not found');
 
     const passwordToHash = update.password ?? userToUpdate.password;
@@ -248,7 +251,8 @@ export class UserService {
               WHEN ${alias} >= ${user.settings.maxDistance} AND ${alias} != 0 AND ${user.settings.maxDistance} != 0 THEN ST_DISTANCE("User"."location",'SRID=4326;POINT(${user.location.coordinates[0]} ${user.location.coordinates[1]})'::geometry) <= ${user.settings.maxDistance} * 1000
               WHEN ${alias} < ${user.settings.maxDistance} AND ${alias} != 0 AND ${user.settings.maxDistance} != 0 THEN ST_DISTANCE("User"."location",'SRID=4326;POINT(${user.location.coordinates[0]} ${user.location.coordinates[1]})'::geometry) <= ${alias} * 1000
             END
-          `)
+          `),
+          considerHobbies: user.settings.considerHobbies,
         },
         gender: user.settings.considerGender
           ? Raw(
@@ -304,8 +308,23 @@ export class UserService {
                 user.interests.society - searchSensitivity,
                 user.interests.society + searchSensitivity
               ),
+            hobbies: user.settings.considerHobbies
+              ? Raw(
+                (alias) => `
+                ${alias} && ${[...user.interests.hobbies.map((hobby) => `'${hobby}'`)].join(', ')}
+                `
+              )
+              : Like('%'),
           }
-          : {},
+          : {
+            hobbies: user.settings.considerHobbies
+              ? Raw(
+                (alias) => `
+                ${alias} && ${[...user.interests.hobbies.map((hobby) => `'${hobby}'`)].join(', ')}
+                `
+              )
+              : Like('%'),
+          },
       },
       relations: ['matches', 'contacts', 'blocksOrDeclined', 'settings', 'interests'],
     });

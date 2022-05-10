@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 import { Ideology } from '../shared/ideologies';
 import { IsOptional, IsNumber, IsPositive, IsEnum } from 'class-validator';
+import { Hobbies } from 'src/shared/hobbies';
 @Entity()
 export class Interests {
   @PrimaryGeneratedColumn()
@@ -21,6 +22,9 @@ export class Interests {
 
   @Column({ nullable: true, type: 'enum', enum: Ideology })
   ideology: Ideology;
+
+  @Column('enum', { default: [], array: true, enum: Hobbies })
+  hobbies: Hobbies[];
 }
 
 export class InterestsBody {
@@ -47,4 +51,8 @@ export class InterestsBody {
   @IsOptional()
   @IsEnum(Ideology)
   ideology?: Ideology;
+
+  @IsOptional()
+  @IsEnum(Hobbies, { each: true })
+  hobbies?: Hobbies[];
 }
